@@ -1267,7 +1267,11 @@ export class BattleScene extends SceneBase {
     mysteryEncounterType?: MysteryEncounterType,
   ): Battle {
     // failsafe for corrupt saves (such as due to enum shifting)
-    if (trainerData?.variant === TrainerVariant.DOUBLE && !trainerConfigs[trainerData.trainerType].hasDouble) {
+    if (
+      trainerData?.variant === TrainerVariant.DOUBLE
+      && !trainerConfigs[trainerData.trainerType].hasDouble
+      && !trainerConfigs[trainerData.trainerType].doubleOnly
+    ) {
       trainerData.variant = TrainerVariant.DEFAULT;
       double = false;
     }
