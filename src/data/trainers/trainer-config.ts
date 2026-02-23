@@ -2108,7 +2108,6 @@ export const trainerConfigs: TrainerConfigs = {
     }),
   [TrainerType.SCUBA_DIVER]: new TrainerConfig(++t)
     .setHasGenders("Free Diver")
-    .setHasDouble("Divers")
     .setMoneyMultiplier(1.5)
     .setEncounterBgm(TrainerType.PARASOL_LADY)
     .setPartyTemplates(
