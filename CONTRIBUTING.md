@@ -147,6 +147,9 @@ Ensure that new test cases:
 
 <!-- TODO: Decide on and suggest a specific placement heiarchy for test cases involving interactions between different moves/abilities/etc. -->
 
+> [!NOTE]
+> While Vitest does support both Jest and Chai syntax for assertions, our project exclusively uses Jest-style assertions (`...toBe()`, `...toEqual()`, etc.) for internal consistency. (The Chai variants have been blacklisted via TypeScript declaration merging, ensuring they aren't accidentally used by mistake.)
+
 #### Running tests
 To make sure your changes didn't break any existing test cases, run `pnpm test:silent` in your terminal to run the full test suite. \
 You can provide additional arguments to the command to change its behavior or specify which test files to run;
@@ -158,10 +161,10 @@ a full list of supported arguments can be found on [Vitest's website](https://vi
 
 ## 💾 Development Save File
 > Some issues may require you to have unlocks on your save file which go beyond normal overrides.
-> For this reason, the repository contains a [save file](test/test-utils/saves/everything.psrv) with _everything_ unlocked (it may also contain things that are not legitimately obtainable).
+> For this reason, the repository contains a [save file](test/utils/saves/everything.psrv) with _everything_ unlocked (it may also contain things that are not legitimately obtainable).
 
 1. Start the game up locally and navigate to `Menu -> Manage Data -> Import Data`
-2. Select [everything.prsv](test/test-utils/saves/everything.prsv) (`test/test-utils/saves/everything.prsv`) and confirm.
+2. Select [everything.prsv](test/utils/saves/everything.prsv) (`test/utils/saves/everything.prsv`) and confirm.
 
 ## ✅ Submitting a Pull Request
 
