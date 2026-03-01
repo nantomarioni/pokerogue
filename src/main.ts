@@ -1,6 +1,7 @@
 import "#app/polyfills"; // All polyfills MUST be loaded first for side effects
 import "#plugins/i18n"; // Initializes i18n on import
 
+import { initializeManifest } from "#app/global-manifest";
 import { InvertPostFX } from "#app/pipelines/invert";
 import { isBeta, isDev } from "#constants/app-constants";
 import { version } from "#package.json";
@@ -85,7 +86,7 @@ async function startGame(gameManifest?: Record<string, string>): Promise<void> {
     version,
   });
   game.sound.pauseOnBlur = false;
-  game.manifest = gameManifest;
+  initializeManifest(gameManifest);
 }
 
 let manifest: Record<string, string> | undefined;

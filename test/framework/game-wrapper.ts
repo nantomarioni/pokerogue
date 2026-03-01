@@ -11,7 +11,6 @@ import { MockLoader } from "#test/mocks/mock-loader";
 import { MockTextureManager } from "#test/mocks/mock-texture-manager";
 import { MockContainer } from "#test/mocks/mocks-container/mock-container";
 import { PokedexMonContainer } from "#ui/pokedex-mon-container";
-import fs from "node:fs";
 import Phaser from "phaser";
 import { vi } from "vitest";
 
@@ -203,48 +202,9 @@ export class GameWrapper {
     this.scene.scene = this.scene as any; // TODO: This seems wacky
     this.scene.input.keyboard = new KeyboardPlugin(this.scene as any);
     this.scene.input.gamepad = new GamepadPlugin(this.scene as any);
-    this.scene.cachedFetch = async (url, _init): Promise<Response> => {
-      // Replace all battle anim fetches solely with the tackle anim to save time.
-      // TODO: This effectively bars us from testing battle animation related code ever
-      const newUrl = url.includes("./battle-anims/") ? prependPath("./battle-anims/tackle.json") : prependPath(url);
-      try {
-        const raw = fs.readFileSync(newUrl, { encoding: "utf8", flag: "r" });
-        return createFetchResponse(JSON.parse(raw));
-      } catch {
-        return createFetchBadResponse({});
-      }
-    };
     this.scene.make = new MockGameObjectCreator(mockTextureManager) as any;
     this.scene.time = new MockClock(this.scene);
     this.scene["remove"] = vi.fn(); // TODO: this should be stubbed differently
     timedEventManager.disable();
   }
-}
-
-function prependPath(originalPath) {
-  const prefix = "assets";
-  if (originalPath.startsWith("./")) {
-    return originalPath.replace("./", `${prefix}/`);
-  }
-  return originalPath;
-}
-// Simulate fetch response
-function createFetchResponse(data: unknown): Response {
-  return {
-    ok: true,
-    status: 200,
-    headers: new Headers(),
-    json: () => Promise.resolve(data),
-    text: () => Promise.resolve(JSON.stringify(data)),
-  } as any;
-}
-// Simulate fetch response
-function createFetchBadResponse(data: unknown): Response {
-  return {
-    ok: false,
-    status: 404,
-    headers: new Headers(),
-    json: () => Promise.resolve(data),
-    text: () => Promise.resolve(JSON.stringify(data)),
-  } as any;
 }

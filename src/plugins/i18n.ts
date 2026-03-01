@@ -1,4 +1,4 @@
-import pkg from "#package.json";
+import { getCachedUrl } from "#utils/fetch-utils";
 import { toKebabCase } from "#utils/strings";
 import i18next from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
@@ -23,7 +23,7 @@ const unicodeRanges = {
   CJKIdeograph: "U+4E00-9FFF",
   devanagari: "U+0900-097F",
   thai: "U+0E00-0E7F",
-  specialCharacters: "U+266A,U+2605,U+2665,U+2663", //♪.★,♥,♣
+  specialCharacters: "U+266A,U+2605,U+2665,U+2663", //♪,★,♥,♣
 };
 
 const rangesByLanguage = {
@@ -36,14 +36,14 @@ const rangesByLanguage = {
 const fonts: LoadingFontFaceProperty[] = [
   // unicode (special characters)
   {
-    face: new FontFace("pkmnems", "url(./fonts/pokemon-emerald-pro.ttf)", {
+    face: new FontFace("pkmnems", `url(${getCachedUrl("./fonts/pokemon-emerald-pro.ttf")})`, {
       unicodeRange: unicodeRanges.specialCharacters,
     }),
     extraOptions: { sizeAdjust: "133%" },
   },
   // unicode (chinese)
   {
-    face: new FontFace("pkmnems", "url(./fonts/pokemon-emerald-pro.ttf)", {
+    face: new FontFace("pkmnems", `url(${getCachedUrl("./fonts/pokemon-emerald-pro.ttf")})`, {
       unicodeRange: rangesByLanguage.chinese,
     }),
     extraOptions: { sizeAdjust: "133%" },
@@ -72,25 +72,25 @@ const fonts: LoadingFontFaceProperty[] = [
   },
   // japanese
   {
-    face: new FontFace("emerald", "url(./fonts/pokemon-bw.ttf)", {
+    face: new FontFace("emerald", `url(${getCachedUrl("./fonts/pokemon-bw.ttf")})`, {
       unicodeRange: rangesByLanguage.japanese,
     }),
     only: ["ja"],
   },
   // devanagari
   {
-    face: new FontFace("emerald", "url(./fonts/8-bit-devanagari.ttf)", {
+    face: new FontFace("emerald", `url(${getCachedUrl("./fonts/8-bit-devanagari.ttf")})`, {
       unicodeRange: unicodeRanges.devanagari,
     }),
   },
   {
-    face: new FontFace("pkmnems", "url(./fonts/8-bit-devanagari.ttf)", {
+    face: new FontFace("pkmnems", `url(${getCachedUrl("./fonts/8-bit-devanagari.ttf")})`, {
       unicodeRange: unicodeRanges.devanagari,
     }),
   },
   // thai
   {
-    face: new FontFace("emerald", "url(./fonts/fsrebellion.otf)", {
+    face: new FontFace("emerald", `url(${getCachedUrl("./fonts/fsrebellion.otf")})`, {
       unicodeRange: unicodeRanges.thai,
     }),
   },
@@ -199,8 +199,8 @@ await i18next
           } else {
             fileName = toKebabCase(ns);
           }
-          // ex: "./locales/en/move-anims"
-          return `./locales/${lng}/${fileName}.json?v=${pkg.version}`;
+          // ex: "./locales/en/move-anims?t=1234567890"
+          return getCachedUrl(`./locales/${lng}/${fileName}.json`);
         },
       },
       defaultNS: "menu",

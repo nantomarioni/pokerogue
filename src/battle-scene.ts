@@ -148,6 +148,7 @@ import {
 } from "#utils/common";
 import { deepMergeSpriteData } from "#utils/data";
 import { getEnumValues } from "#utils/enums";
+import { cachedFetch } from "#utils/fetch-utils";
 import { getModifierPoolForType, getModifierType } from "#utils/modifier-utils";
 import { getPokemonSpecies } from "#utils/pokemon-utils";
 import i18next from "i18next";
@@ -668,7 +669,7 @@ export class BattleScene extends SceneBase {
     if (expSpriteKeys.size > 0) {
       return;
     }
-    const res = await this.cachedFetch("./exp-sprites.json");
+    const res = await cachedFetch("./exp-sprites.json");
     const keys = await res.json();
     if (!Array.isArray(keys)) {
       throw new Error("EXP Sprites were not array when fetched!");
@@ -686,24 +687,15 @@ export class BattleScene extends SceneBase {
    */
   async initVariantData(): Promise<void> {
     clearVariantData();
-    const otherVariantData = await this.cachedFetch("./images/pokemon/variant/_masterlist.json").then(r => r.json());
+    const otherVariantData = await cachedFetch("./images/pokemon/variant/_masterlist.json").then(r => r.json());
     for (const k of Object.keys(otherVariantData)) {
       variantData[k] = otherVariantData[k];
     }
     if (!this.experimentalSprites) {
       return;
     }
-    const expVariantData = await this.cachedFetch("./images/pokemon/variant/_exp_masterlist.json").then(r => r.json());
+    const expVariantData = await cachedFetch("./images/pokemon/variant/_exp_masterlist.json").then(r => r.json());
     deepMergeSpriteData(variantData, expVariantData);
-  }
-
-  cachedFetch(url: string, init?: RequestInit): Promise<Response> {
-    const { manifest } = this.game;
-    const timestamp = manifest?.[`/${url.replace("./", "")}`];
-    if (timestamp) {
-      url += `?t=${timestamp}`;
-    }
-    return fetch(url, init);
   }
 
   async initStarterColors(): Promise<void> {
@@ -711,7 +703,7 @@ export class BattleScene extends SceneBase {
       // already initialized
       return;
     }
-    const sc = await this.cachedFetch("./starter-colors.json").then(res => res.json());
+    const sc = await cachedFetch("./starter-colors.json").then(res => res.json());
     for (const key of Object.keys(sc)) {
       starterColors[key] = sc[key];
     }
