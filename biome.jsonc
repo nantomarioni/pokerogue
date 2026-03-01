@@ -331,12 +331,12 @@
             "noNonNullAssertion": "off" // tedious in some tests
           },
           "nursery": {
+            // TODO: Enable for normal test folder files as well
             "noFloatingPromises": "error"
           }
         }
       }
     },
-
     // Prevent forcing type-only imports inside `overrides.ts` (where they serve as placeholders for actual runtime symbols)
     {
       "includes": ["**/src/overrides.ts"],
