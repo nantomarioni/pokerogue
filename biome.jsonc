@@ -30,7 +30,7 @@
       ".github/**/*.mts",
       "!!assets",
       "!!coverage",
-      "!!dist",
+      "!!dist*",
       "!!docs",
       "!!locales",
       "!!typedoc",
