@@ -42,6 +42,7 @@ import {
 } from "#modifiers/modifier-type";
 import { PokemonMove } from "#moves/pokemon-move";
 import { showEncounterText } from "#mystery-encounters/encounter-dialogue-utils";
+import type { MysteryEncounter } from "#mystery-encounters/mystery-encounter";
 import type { MysteryEncounterOption } from "#mystery-encounters/mystery-encounter-option";
 import type { Variant } from "#sprites/variant";
 import type { PokemonData } from "#system/pokemon-data";
@@ -452,9 +453,9 @@ export async function initBattleWithEnemyConfig(partyConfig: EnemyPartyConfig): 
 
 /**
  * Load special move animations/sfx for hard-coded encounter-specific moves that a pokemon uses at the start of an encounter
- * See: [startOfBattleEffects](IMysteryEncounter.startOfBattleEffects) for more details
- *
- * This promise does not need to be awaited on if called in an encounter onInit (will just load lazily)
+ * @see {@linkcode MysteryEncounter.startOfBattleEffects}
+ * @remarks
+ * This promise does not need to be awaited if called in an encounter's `onInit` (will just load lazily)
  * @param moves
  */
 export async function loadCustomMovesForEncounter(moves: MoveId | MoveId[]): Promise<void> {

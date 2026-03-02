@@ -4680,14 +4680,10 @@ export class RunSuccessAbAttr extends AbAttr {
 
 type ArenaTrapCondition = (user: Pokemon, target: Pokemon) => boolean;
 
-/**
- * Base class for checking if a Pokemon is trapped by arena trap
- * @field {@linkcode arenaTrapCondition} Conditional for trapping abilities.
- * For example, Magnet Pull will only activate if opponent is Steel type.
- * @see {@linkcode applyCheckTrapped}
- */
+/** Base class for checking if a Pokemon is trapped by a trapping effect. */
 export class CheckTrappedAbAttr extends AbAttr {
   protected arenaTrapCondition: ArenaTrapCondition;
+
   constructor(condition: ArenaTrapCondition) {
     super(false);
     this.arenaTrapCondition = condition;

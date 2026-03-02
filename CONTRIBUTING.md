@@ -133,7 +133,7 @@ const overrides = {
 
 ### 2 - Automatic Testing
 
-<!-- TODO: Consider moving this to a separate document. There's tons more we could (and should) expand on here, like the `test:create` script, basically the entire `test/test-utils` folder, project conventions, etc etc.-->
+<!-- TODO: Consider moving this to a separate document. There's tons more we could (and should) expand on here, like the `test:create` script, all of the test utils/etc, project conventions, etc etc.-->
 
 PokéRogue uses [Vitest](https://vitest.dev/) for automated testing.
 Checking out existing tests in the [test](./test/) folder is a great way to understand how the existing system works, as well as familiarizing yourself with the project as a whole.
@@ -170,10 +170,10 @@ a full list of supported arguments can be found on [Vitest's website](https://vi
 
 ## 💾 Development Save File
 > Some issues may require you to have unlocks on your save file which go beyond normal overrides.
-> For this reason, the repository contains a [save file](test/test-utils/saves/everything.prsv) with _everything_ unlocked (including things not legitimately obtainable, like unreleased variant shinies).
+> For this reason, the repository contains a [save file](test/utils/saves/everything.prsv) with _everything_ unlocked (including things not legitimately obtainable, like unreleased variant shinies).
 
 1. Start the game up locally and navigate to `Menu -> Manage Data -> Import Data`
-2. Select [everything.prsv](test/test-utils/saves/everything.prsv) (`test/test-utils/saves/everything.prsv`) and hit "Confirm".
+2. Select [everything.prsv](test/utils/saves/everything.prsv) (`test/utils/saves/everything.prsv`) and hit "Confirm".
 3. The page will reload with everything unlocked! You can now test your changes with this save file.
 
 ## ✅ Submitting a Pull Request

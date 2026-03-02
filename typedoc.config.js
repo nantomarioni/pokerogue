@@ -55,7 +55,7 @@ const config = {
   out: process.env.CI ? "/tmp/docs" : "./typedoc",
   name: "PokéRogue",
   readme: "./README.md",
-  projectDocuments: ["docs/*.md, CONTRIBUTING.md"],
+  projectDocuments: ["docs/*.md", "CONTRIBUTING.md"],
   coverageLabel: "Documented",
   coverageSvgWidth: 120, // Increased from 104 baseline due to adding 2 extra letters
   favicon: "./favicon.ico",

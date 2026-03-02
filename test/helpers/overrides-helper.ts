@@ -510,7 +510,7 @@ export class OverridesHelper extends GameManagerHelper {
    * @returns `this`
    * @remarks
    * Does nothing if {@linkcode Overrides.ENEMY_FUSION_OVERRIDE} is not enabled
-   * {@see {@linkcode enableEnemyFusion}}
+   * @see {@linkcode enableEnemyFusion}
    */
   // TODO: Should we just bundle these 2 together?
   public enemyFusionSpecies(species: SpeciesId | null): this {
