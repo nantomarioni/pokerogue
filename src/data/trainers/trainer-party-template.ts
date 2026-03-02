@@ -205,6 +205,13 @@ export const trainerPartyTemplates = {
     new TrainerPartyTemplate(2, PartyMemberStrength.STRONGER, false, true, EvoLevelThresholdKind.STRONG),
   ),
 
+  EVIL_LEADER: new TrainerPartyCompoundTemplate(
+    new TrainerPartyTemplate(1, PartyMemberStrength.STRONG, undefined, undefined, EvoLevelThresholdKind.STRONG),
+    new TrainerPartyTemplate(2, PartyMemberStrength.AVERAGE, undefined, undefined, EvoLevelThresholdKind.STRONG),
+    new TrainerPartyTemplate(2, PartyMemberStrength.STRONG, undefined, undefined, EvoLevelThresholdKind.STRONG),
+    new TrainerPartyTemplate(1, PartyMemberStrength.STRONGER, undefined, undefined, EvoLevelThresholdKind.STRONG),
+  ),
+
   RIVAL: new TrainerPartyCompoundTemplate(
     new TrainerPartyTemplate(1, PartyMemberStrength.STRONG),
     new TrainerPartyTemplate(1, PartyMemberStrength.AVERAGE),

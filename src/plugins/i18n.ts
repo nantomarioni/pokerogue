@@ -94,6 +94,12 @@ const fonts: LoadingFontFaceProperty[] = [
       unicodeRange: unicodeRanges.thai,
     }),
   },
+  {
+    face: new FontFace("pkmnems", "url(./fonts/terrible-thaifix.ttf)", {
+      unicodeRange: unicodeRanges.thai,
+    }),
+    extraOptions: { sizeAdjust: "133%" },
+  },
 ];
 
 //#region Functions
