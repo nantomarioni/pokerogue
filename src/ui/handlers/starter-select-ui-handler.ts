@@ -797,7 +797,7 @@ export class StarterSelectUiHandler extends MessageUiHandler {
 
     // TODO: Apply the same logic done in the pokedex to only have 81 containers whose sprites are cycled
     for (const species of allSpecies) {
-      if (!speciesStarterCosts.hasOwnProperty(species.speciesId) || !species.isObtainable()) {
+      if (!Object.hasOwn(speciesStarterCosts, species.speciesId)) {
         continue;
       }
 
