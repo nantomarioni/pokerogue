@@ -131,8 +131,19 @@ export class TrainerConfig {
   public title: string;
   public titleDouble: string;
   public hasGenders = false;
+  /**
+   * Whether this trainer has a **random** chance to appear as a double battle variant instead of a single battle variant.
+   * @remarks
+   * Mutually exclusive with `doubleOnly`.
+   */
+  // TODO: Enforce mutual exclusivity
   public hasDouble = false;
   public hasCharSprite = false;
+  /**
+   * Whether this trainer can **only** appear inside a double battle.
+   * @remarks
+   * Mutually exclusive with `hasDouble`.
+   */
   public doubleOnly = false;
   public moneyMultiplier = 1;
   public isBoss = false;

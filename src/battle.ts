@@ -21,6 +21,7 @@ import type { CustomModifierSettings } from "#modifiers/modifier-type";
 import type { MysteryEncounter } from "#mystery-encounters/mystery-encounter";
 import { MusicPreference } from "#system/settings";
 import { trainerConfigs } from "#trainers/trainer-config";
+import type { NewBattleResolvedProps } from "#types/new-battle-props";
 import type { TurnMove } from "#types/turn-move";
 import {
   isBetween,
@@ -103,17 +104,23 @@ export class Battle {
    */
   public failedRunAway = false;
 
-  constructor(gameMode: GameMode, waveIndex: number, battleType: BattleType, trainer?: Trainer, double = false) {
+  constructor(
+    gameMode: GameMode,
+    { waveIndex, battleType, trainer, mysteryEncounterType, double = false }: NewBattleResolvedProps,
+  ) {
     this.gameMode = gameMode;
     this.waveIndex = waveIndex;
     this.battleType = battleType;
     this.trainer = trainer ?? null;
+    this.mysteryEncounterType = mysteryEncounterType;
+    this.double = double;
+
     this.initBattleSpec();
     this.enemyLevels =
-      battleType !== BattleType.TRAINER
-        ? new Array(double ? 2 : 1).fill(null).map(() => this.getLevelForWave())
-        : trainer?.getPartyLevels(this.waveIndex);
-    this.double = double;
+      battleType === BattleType.TRAINER
+        ? trainer?.getPartyLevels(this.waveIndex)
+        : // TODO: Remove array.fill.map
+          new Array(double ? 2 : 1).fill(null).map(() => this.getLevelForWave());
   }
 
   private initBattleSpec(): void {
@@ -500,13 +507,12 @@ export class Battle {
 
 export class FixedBattle extends Battle {
   constructor(waveIndex: number, config: FixedBattleConfig) {
-    super(
-      globalScene.gameMode,
+    super(globalScene.gameMode, {
       waveIndex,
-      config.battleType,
-      config.battleType === BattleType.TRAINER ? config.getTrainer() : undefined,
-      config.double,
-    );
+      battleType: config.battleType,
+      trainer: config.battleType === BattleType.TRAINER ? config.getTrainer() : undefined,
+      double: config.double,
+    });
     if (config.getEnemyParty) {
       this.enemyParty = config.getEnemyParty();
     }
@@ -517,14 +523,15 @@ type GetTrainerFunc = () => Trainer;
 type GetEnemyPartyFunc = () => EnemyPokemon[];
 
 export class FixedBattleConfig {
-  public battleType: BattleType;
+  // TODO: All fixed battles are currently trainer battles
+  public battleType: Exclude<BattleType, BattleType.CLEAR>;
   public double: boolean;
   public getTrainer: GetTrainerFunc;
   public getEnemyParty: GetEnemyPartyFunc;
   public seedOffsetWaveIndex: number;
   public customModifierRewardSettings?: CustomModifierSettings;
 
-  setBattleType(battleType: BattleType): FixedBattleConfig {
+  setBattleType(battleType: Exclude<BattleType, BattleType.CLEAR>): FixedBattleConfig {
     this.battleType = battleType;
     return this;
   }
