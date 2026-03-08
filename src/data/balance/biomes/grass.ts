@@ -104,6 +104,5 @@ export const grassBiome: Biome = {
   trainerChance: 6,
   weatherPool,
   terrainPool,
-  bgmLoopPoint: 1.995,
   biomeLinks,
 };

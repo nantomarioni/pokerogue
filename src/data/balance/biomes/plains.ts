@@ -123,6 +123,5 @@ export const plainsBiome: Biome = {
   trainerChance: 6,
   weatherPool,
   terrainPool,
-  bgmLoopPoint: 17.485,
   biomeLinks,
 };
