@@ -39,14 +39,17 @@ const SLOT_6_FIGHT_6_LEVEL = 200;
  *
  * @param pokemon - The pokemon to force traits for
  * @param bars - (default `0`) The number of boss bar segments to set. If `zero`, the pokemon will not be a boss
+ * @param useRivalSignature - (default `false`) Whether to use the rival signature move when generating the moveset.
  */
 
-function forceRivalStarterTraits(pokemon: EnemyPokemon, bars = 0): void {
+function forceRivalStarterTraits(pokemon: EnemyPokemon, bars = 0, useRivalSignature = false): void {
   pokemon.abilityIndex = 0;
   pokemon.teraType = pokemon.species.type1;
   if (bars > 0) {
     pokemon.setBoss(true, bars);
-    pokemon.generateAndPopulateMoveset();
+  }
+  if (bars > 0 || useRivalSignature) {
+    pokemon.generateAndPopulateMoveset(useRivalSignature);
   }
 }
 
@@ -153,10 +156,15 @@ const SLOT_1_FINAL = [
  *
  * @param pokemon - The rival bird pokemon to force an ability for
  * @param bars - (default `0`) The number of boss bar segments to set. If `zero`, the pokemon will not be a boss
+ * @param useRivalSignature - (default `false`) Whether to use the rival signature move when generating the moveset.
  */
 
-function forceRivalBirdAbility(pokemon: EnemyPokemon, bars = 0): void {
+function forceRivalBirdAbility(pokemon: EnemyPokemon, bars = 0, useRivalSignature = false): void {
   switch (pokemon.species.speciesId) {
+    // Keen Eye for Pidgey line
+    case SpeciesId.PIDGEY:
+    case SpeciesId.PIDGEOTTO:
+    case SpeciesId.PIDGEOT:
     // Guts for Tailow line
     case SpeciesId.TAILLOW:
     case SpeciesId.SWELLOW:
@@ -167,10 +175,6 @@ function forceRivalBirdAbility(pokemon: EnemyPokemon, bars = 0): void {
       pokemon.abilityIndex = 0;
       break;
     }
-    // Tangled Feet for Pidgey line
-    case SpeciesId.PIDGEY:
-    case SpeciesId.PIDGEOTTO:
-    case SpeciesId.PIDGEOT:
     // Super Luck for pidove line
     case SpeciesId.PIDOVE:
     case SpeciesId.TRANQUILL:
@@ -199,7 +203,9 @@ function forceRivalBirdAbility(pokemon: EnemyPokemon, bars = 0): void {
 
   if (bars > 0) {
     pokemon.setBoss(true, bars);
-    pokemon.generateAndPopulateMoveset();
+  }
+  if (bars > 0 || useRivalSignature) {
+    pokemon.generateAndPopulateMoveset(useRivalSignature);
   }
 }
 /** Rival's slot 2 species pool for fight 1 */
@@ -648,8 +654,8 @@ export const RIVAL_4_POOL: RivalPoolConfig = [
 
 /** Pools for the fifth rival fight */
 export const RIVAL_5_POOL: RivalPoolConfig = [
-  { pool: SLOT_1_FINAL, postProcess: p => forceRivalStarterTraits(p, 2) },
-  { pool: SLOT_2_FINAL, postProcess: forceRivalBirdAbility },
+  { pool: SLOT_1_FINAL, postProcess: p => forceRivalStarterTraits(p, 2, true) },
+  { pool: SLOT_2_FINAL, postProcess: p => forceRivalBirdAbility(p, 0, true) },
   {
     pool: SLOT_3_FINAL,
     postProcess: p => (p.level = SLOT_3_FIGHT_5_LEVEL),
@@ -668,8 +674,8 @@ export const RIVAL_5_POOL: RivalPoolConfig = [
 
 /** Pools for the sixth rival fight */
 export const RIVAL_6_POOL: RivalPoolConfig = [
-  { pool: SLOT_1_FINAL, postProcess: p => forceRivalStarterTraits(p, 3) },
-  { pool: SLOT_2_FINAL, postProcess: p => forceRivalBirdAbility(p, 2) },
+  { pool: SLOT_1_FINAL, postProcess: p => forceRivalStarterTraits(p, 3, true) },
+  { pool: SLOT_2_FINAL, postProcess: p => forceRivalBirdAbility(p, 2, true) },
   {
     pool: SLOT_3_FINAL,
     postProcess: p => (p.level = SLOT_3_FIGHT_6_LEVEL),

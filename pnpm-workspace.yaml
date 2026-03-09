@@ -5,6 +5,7 @@ onlyBuiltDependencies:
   - esbuild
   - lefthook
   - msw
+  - vite-node
 
 overrides:
   ajv@>=7.0.0-alpha.0 <8.18.0: '>=8.18.0'
