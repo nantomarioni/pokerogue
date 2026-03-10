@@ -5,6 +5,7 @@ import { PromptHandler } from "#test/helpers/prompt-handler";
 import { MockConsole } from "#test/mocks/mock-console/mock-console";
 import { logTestEnd, logTestStart } from "#test/setup/test-end-log";
 import { initTests } from "#test/setup/test-file-initialization";
+import fs from "node:fs";
 import chalk from "chalk";
 import { afterAll, afterEach, beforeAll, beforeEach, vi } from "vitest";
 
@@ -60,6 +61,52 @@ vi.mock(import("i18next"), async importOriginal => {
   console.log("\x1b[38;2;223;184;216mi18n MSW server listening\x1b[0m");
 
   return await importOriginal();
+});
+
+vi.mock(import("#utils/fetch-utils"), async importOriginal => {
+  const { getCachedUrl } = await importOriginal();
+
+  function prependPath(originalPath: string) {
+    const prefix = "assets";
+    if (originalPath.startsWith("./")) {
+      return originalPath.replace("./", `${prefix}/`);
+    }
+    return originalPath;
+  }
+  // Simulate fetch response
+  function createFetchResponse(data: unknown): Response {
+    return {
+      ok: true,
+      status: 200,
+      headers: new Headers(),
+      json: () => Promise.resolve(data),
+      text: () => Promise.resolve(JSON.stringify(data)),
+    } as Response;
+  }
+  // Simulate fetch response
+  function createFetchBadResponse(data: unknown): Response {
+    return {
+      ok: false,
+      status: 404,
+      headers: new Headers(),
+      json: () => Promise.resolve(data),
+      text: () => Promise.resolve(JSON.stringify(data)),
+    } as Response;
+  }
+
+  async function cachedFetch(url: string, _init?: RequestInit): Promise<Response> {
+    // Replace all battle anim fetches solely with the tackle anim to save time.
+    // TODO: This effectively bars us from testing battle animation related code ever
+    const newUrl = url.includes("./battle-anims/") ? prependPath("./battle-anims/tackle.json") : prependPath(url);
+    try {
+      const raw = fs.readFileSync(newUrl, { encoding: "utf8", flag: "r" });
+      return createFetchResponse(JSON.parse(raw));
+    } catch {
+      return createFetchBadResponse({});
+    }
+  }
+
+  return { cachedFetch, getCachedUrl } satisfies typeof import("#utils/fetch-utils");
 });
 
 //#endregion Mocking
