@@ -1283,8 +1283,8 @@ export class BattleScene extends SceneBase {
 
   /**
    * Create and initialize a new battle.
-   * @param fromSession - The {@linkcode SessionSaveData} being used to seed the battle.
-   * Should be omitted if not loading an existing save file.
+   * @param fromSession - The {@linkcode SessionSaveData} being used to seed the battle. \
+   *   Should be omitted if not loading an existing save file.
    * @returns The newly created `Battle` instance.
    */
   public newBattle(fromSession?: SessionSaveData): Battle {
@@ -1296,10 +1296,10 @@ export class BattleScene extends SceneBase {
     this.resetSeed(waveIndex);
 
     // Set attributes of the `resolved` object based on the type of battle being created.
-    if (this.gameMode.isFixedBattle(waveIndex)) {
-      this.handleFixedBattle(resolved);
-    } else if (fromSession) {
+    if (fromSession) {
       this.handleSavedBattle(resolved, props);
+    } else if (this.gameMode.isFixedBattle(waveIndex)) {
+      this.handleFixedBattle(resolved);
     } else {
       this.handleNonFixedBattle(resolved);
     }
