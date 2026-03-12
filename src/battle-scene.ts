@@ -1367,7 +1367,7 @@ export class BattleScene extends SceneBase {
     const mysteryEncounterType = sessionMEType !== -1 ? sessionMEType : undefined;
 
     let fixedDouble: boolean;
-    // defensive programming - don't force double battles on trainers that can't be doubles due to enum shifting
+    // make sure illegal battle types don't occur due to save data corruption (e.g. from enum shifting)
     if (
       trainerData?.variant === TrainerVariant.DOUBLE
       && !trainerConfigs[trainerData.trainerType].hasDouble
@@ -1375,6 +1375,13 @@ export class BattleScene extends SceneBase {
     ) {
       trainerData.variant = TrainerVariant.DEFAULT;
       fixedDouble = false;
+    } else if (
+      trainerData
+      && trainerData.variant !== TrainerVariant.DOUBLE
+      && trainerConfigs[trainerData.trainerType].doubleOnly
+    ) {
+      trainerData.variant = TrainerVariant.DOUBLE;
+      fixedDouble = true;
     }
 
     switch (battleType) {
