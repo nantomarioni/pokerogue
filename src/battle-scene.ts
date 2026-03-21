@@ -1574,14 +1574,18 @@ export class BattleScene extends SceneBase {
     for (const enemyPokemon of this.getEnemyParty()) {
       enemyPokemon.destroy();
     }
+
     this.trySpreadPokerus();
     if (!isNewBiome && this.currentBattle.waveIndex % 10 === 5) {
       this.arena.updatePoolsForTimeOfDay();
     }
+
+    // use the old value of `double` to ensure both combatants get recalled properly when going from double to single battles
+    const playerField = this.getPlayerParty().slice(0, 1 + Number(lastBattle.double));
     if (resetArenaState) {
       this.arena.resetArenaEffects();
 
-      this.getPlayerField().forEach((pokemon, index) => {
+      playerField.forEach((pokemon, index) => {
         pokemon.lapseTag(BattlerTagType.COMMANDED);
         if (pokemon.isOnField()) {
           this.phaseManager.pushNew("ReturnPhase", index);
@@ -3646,8 +3650,9 @@ export class BattleScene extends SceneBase {
 
     // MEs can only spawn 3 or more waves after the previous ME, barring overrides
     const canSpawn =
-      Overrides.MYSTERY_ENCOUNTER_RATE_OVERRIDE !== null // Bang on `at()` is justified due to the check for length === 0
-      && (encounteredEvents.length === 0 || waveIndex > 3 + encounteredEvents.at(-1)!.waveIndex);
+      Overrides.MYSTERY_ENCOUNTER_RATE_OVERRIDE !== null
+      || encounteredEvents.length === 0
+      || waveIndex > 3 + encounteredEvents.at(-1)!.waveIndex; // Bang on `at()` is justified due to the check for length === 0
     if (!canSpawn) {
       return false;
     }
