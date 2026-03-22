@@ -57,6 +57,9 @@ importers:
       '@biomejs/biome':
         specifier: 2.4.4
         version: 2.4.4
+      '@commander-js/extra-typings':
+        specifier: ^14.0.0
+        version: 14.0.0(commander@14.0.3)
       '@inquirer/prompts':
         specifier: ^8.3.0
         version: 8.3.0(@types/node@24.11.0)
@@ -84,6 +87,9 @@ importers:
       chalk:
         specifier: ^5.6.2
         version: 5.6.2
+      commander:
+        specifier: ^14.0.3
+        version: 14.0.3
       dependency-cruiser:
         specifier: ^17.3.8
         version: 17.3.8
@@ -261,6 +267,11 @@ packages:
   '@bramus/specificity@2.4.2':
     resolution: {integrity: sha512-ctxtJ/eA+t+6q2++vj5j7FYX3nRu311q1wfYH3xjlLOsczhlhxAg2FWNUXhpGvAw3BWo1xBcvOV6/YLc2r5FJw==}
     hasBin: true
+
+  '@commander-js/extra-typings@14.0.0':
+    resolution: {integrity: sha512-hIn0ncNaJRLkZrxBIp5AsW/eXEHNKYQBh0aPdoUqNgD+Io3NIykQqpKFyKcuasZhicGaEZJX/JBSIkZ4e5x8Dg==}
+    peerDependencies:
+      commander: ~14.0.0
 
   '@csstools/color-helpers@6.0.2':
     resolution: {integrity: sha512-LMGQLS9EuADloEFkcTBR3BwV/CGHV7zyDxVRtVDTwdI2Ca4it0CCVTT9wCkxSgokjE5Ho41hEPgb8OEUwoXr6Q==}
@@ -2109,6 +2120,10 @@ snapshots:
   '@bramus/specificity@2.4.2':
     dependencies:
       css-tree: 3.1.0
+
+  '@commander-js/extra-typings@14.0.0(commander@14.0.3)':
+    dependencies:
+      commander: 14.0.3
 
   '@csstools/color-helpers@6.0.2': {}
 
