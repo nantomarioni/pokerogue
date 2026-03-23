@@ -1,5 +1,4 @@
 import { BiomeId } from "#enums/biome-id";
-import { Challenges } from "#enums/challenges";
 import { EventType } from "#enums/event-type";
 import { MysteryEncounterTier } from "#enums/mystery-encounter-tier";
 import { MysteryEncounterType } from "#enums/mystery-encounter-type";
@@ -337,12 +336,13 @@ export const timedEvents: readonly TimedEvent[] = [
       ["title", "title_afd"],
       ["battle_rival_3", "battle_rival_3_afd"],
     ],
-    dailyRunChallenges: [
-      {
-        challenge: Challenges.INVERSE_BATTLE,
-        value: 1,
-      },
-    ],
+    // This has been moved to custom seeds. Keeping this here to keep track of what the event did.
+    // dailyRunChallenges: [
+    //   {
+    //     challenge: Challenges.INVERSE_BATTLE,
+    //     value: 1,
+    //   },
+    // ],
   },
   {
     name: "Shining Spring",

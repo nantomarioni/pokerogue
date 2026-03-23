@@ -2229,6 +2229,14 @@ export abstract class Pokemon extends Phaser.GameObjects.Container {
       return false;
     }
 
+    if (
+      globalScene.gameMode.isDaily
+      && this.customPokemonData.passive != null
+      && this.customPokemonData.passive !== -1
+    ) {
+      return true;
+    }
+
     const hasPassive = new BooleanHolder(this.passive);
     applyChallenges(ChallengeType.PASSIVE_ACCESS, this, hasPassive);
 
@@ -6517,8 +6525,11 @@ export class EnemyPokemon extends Pokemon {
 
       this.luck = (this.shiny ? this.variant + 1 : 0) + (this.fusionShiny ? this.fusionVariant + 1 : 0);
 
-      this.applyCustomDailyConfig();
-      this.applyCustomDailyBossConfig();
+      if (isDailyFinalBoss()) {
+        this.applyCustomDailyBossConfig();
+      } else {
+        this.applyCustomDailyConfig();
+      }
 
       if (this.hasTrainer() && globalScene.currentBattle) {
         const { waveIndex } = globalScene.currentBattle;
