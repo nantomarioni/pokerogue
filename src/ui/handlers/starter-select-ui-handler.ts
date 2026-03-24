@@ -3564,8 +3564,7 @@ export class StarterSelectUiHandler extends MessageUiHandler {
         this.showStats();
       } else {
         this.statsContainer.setVisible(false);
-        //@ts-expect-error
-        this.statsContainer.updateIvs(null); // TODO: resolve ts-ignore. what. how? huh?
+        this.statsContainer.updateIvs(null);
       }
     }
 
@@ -4621,8 +4620,7 @@ export class StarterSelectUiHandler extends MessageUiHandler {
       this.statsMode = false;
       this.statsContainer.setVisible(false);
       this.pokemonSprite.setVisible(!!this.speciesStarterDexEntry?.caughtAttr);
-      //@ts-expect-error
-      this.statsContainer.updateIvs(null); // TODO: resolve ts-ignore. !?!?
+      this.statsContainer.updateIvs(null);
       this.teraIcon.setVisible(this.allowTera);
       const props = globalScene.gameData.getSpeciesDexAttrProps(
         this.lastSpecies,
