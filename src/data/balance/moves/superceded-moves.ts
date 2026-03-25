@@ -44,6 +44,23 @@ const SINGLE_STAGE_ATK_BOOST_REPLACEMENTS: readonly MoveId[] = [
   MoveId.VICTORY_DANCE,
 ];
 
+// For Protect and Detect
+const PROTECT_REPLACEMENTS: readonly MoveId[] = [
+  MoveId.BANEFUL_BUNKER,
+  MoveId.BURNING_BULWARK,
+  MoveId.KINGS_SHIELD,
+  MoveId.OBSTRUCT,
+  MoveId.SPIKY_SHIELD,
+];
+
+// For Sing and GrassWhistle
+const LOW_ACC_SLEEP_REPLACEMENTS: readonly MoveId[] = [
+  MoveId.HYPNOSIS,
+  MoveId.SLEEP_POWDER,
+  MoveId.LOVELY_KISS,
+  MoveId.SPORE,
+];
+
 const MULTIHIT_NORMAL_REPLACEMENTS: readonly MoveId[] = [MoveId.SPIKE_CANNON, MoveId.TAIL_SLAP];
 
 const NORMAL_40BP_REPLACEMENTS: readonly MoveId[] = [
@@ -563,8 +580,8 @@ export const SUPERCEDED_MOVES: Partial<Record<MoveId, readonly MoveId[]>> = {
   ],
   [MoveId.WING_ATTACK]: [MoveId.DRILL_PECK, MoveId.AERIAL_ACE, MoveId.PLUCK, MoveId.FLOATY_FALL],
 
-  // Status moves
-  // technically, defense curl is better than harden because it boosts rollout and ice ball, though not added here
+  // Setup Moves
+  // Technically, defense curl is better than harden because it boosts rollout and ice ball, though not added here
   [MoveId.HARDEN]: SINGLE_STAGE_DEF_BOOST_REPLACEMENTS,
   [MoveId.WITHDRAW]: SINGLE_STAGE_DEF_BOOST_REPLACEMENTS,
   [MoveId.DEFENSE_CURL]: SINGLE_STAGE_DEF_BOOST_REPLACEMENTS,
@@ -572,8 +589,21 @@ export const SUPERCEDED_MOVES: Partial<Record<MoveId, readonly MoveId[]>> = {
   [MoveId.SHARPEN]: SINGLE_STAGE_ATK_BOOST_REPLACEMENTS,
   [MoveId.MEDITATE]: SINGLE_STAGE_ATK_BOOST_REPLACEMENTS,
   [MoveId.CALM_MIND]: [MoveId.QUIVER_DANCE, MoveId.TAKE_HEART],
+
+  // Status Moves
   [MoveId.SUPERSONIC]: [MoveId.CONFUSE_RAY],
-  [MoveId.LEER]: [MoveId.TICKLE, MoveId.OCTOLOCK],
+  [MoveId.SING]: LOW_ACC_SLEEP_REPLACEMENTS,
+  [MoveId.GRASS_WHISTLE]: LOW_ACC_SLEEP_REPLACEMENTS,
+  [MoveId.HYPNOSIS]: [MoveId.LOVELY_KISS, MoveId.SLEEP_POWDER, MoveId.SPORE],
+  [MoveId.SLEEP_POWDER]: [MoveId.SPORE],
+  [MoveId.POISON_GAS]: [MoveId.TOXIC, MoveId.TOXIC_THREAD, MoveId.MORTAL_SPIN],
+  [MoveId.POISON_POWDER]: [MoveId.TOXIC, MoveId.POISON_GAS, MoveId.TOXIC_THREAD, MoveId.MORTAL_SPIN],
+  [MoveId.STUN_SPORE]: [MoveId.THUNDER_WAVE, MoveId.GLARE],
+  [MoveId.THUNDER_WAVE]: [MoveId.GLARE, MoveId.NUZZLE, MoveId.BUZZY_BUZZ],
+  [MoveId.WILL_O_WISP]: [MoveId.SIZZLY_SLIDE],
+
+  // Debuffing Moves
+  [MoveId.LEER]: [MoveId.TICKLE, MoveId.OCTOLOCK, MoveId.SCREECH],
   [MoveId.GROWL]: [
     MoveId.FEATHER_DANCE,
     MoveId.BABY_DOLL_EYES,
@@ -584,9 +614,20 @@ export const SUPERCEDED_MOVES: Partial<Record<MoveId, readonly MoveId[]>> = {
     MoveId.TICKLE,
     MoveId.STRENGTH_SAP,
   ],
+  [MoveId.CONFIDE]: [MoveId.EERIE_IMPULSE, MoveId.NOBLE_ROAR, MoveId.TEARFUL_LOOK],
   [MoveId.METAL_SOUND]: [MoveId.FAKE_TEARS],
-  [MoveId.PROTECT]: [MoveId.BANEFUL_BUNKER, MoveId.KINGS_SHIELD, MoveId.SPIKY_SHIELD, MoveId.BURNING_BULWARK],
-  [MoveId.DETECT]: [MoveId.BANEFUL_BUNKER, MoveId.KINGS_SHIELD, MoveId.SPIKY_SHIELD, MoveId.BURNING_BULWARK],
+
+  // Misc Support
+  [MoveId.LIGHT_SCREEN]: [MoveId.GLITZY_GLOW],
+  [MoveId.REFLECT]: [MoveId.BADDY_BAD],
+  [MoveId.LEECH_SEED]: [MoveId.SAPPY_SEED],
+  [MoveId.HAZE]: [MoveId.FREEZY_FROST],
+
+  // Protect clones
+  [MoveId.PROTECT]: PROTECT_REPLACEMENTS,
+  [MoveId.DETECT]: PROTECT_REPLACEMENTS,
+
+  // Reliable Healing
   [MoveId.REST]: [
     MoveId.MORNING_SUN,
     MoveId.SYNTHESIS,
