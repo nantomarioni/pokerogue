@@ -1,7 +1,7 @@
 import { globalScene } from "#app/global-scene";
 import { starterColors } from "#app/global-vars/starter-colors";
 import { speciesEggMoves } from "#balance/moves/egg-moves";
-import { pokemonEvolutions, pokemonPrevolutions, pokemonStarters } from "#balance/pokemon-evolutions";
+import { getEvolutions, getPreEvolutions, pokemonStarters } from "#balance/pokemon-evolutions";
 import { pokemonFormLevelMoves, pokemonSpeciesLevelMoves } from "#balance/pokemon-level-moves";
 import {
   getPassiveCandyCount,
@@ -1562,22 +1562,11 @@ export class PokedexUiHandler extends MessageUiHandler {
 
       // The entire evolutionary line is processed from the point of the current species,
       // due to pokemon being automatically [de-]evolved when encountered
-      const evoLine: Set<SpeciesId> = new Set([species.speciesId]);
-
-      let preEvoSpeciesId = pokemonPrevolutions[species.speciesId];
-      while (preEvoSpeciesId) {
-        evoLine.add(preEvoSpeciesId);
-        preEvoSpeciesId = pokemonPrevolutions[preEvoSpeciesId];
-      }
-
-      const getEvolutions = (sId: SpeciesId) => {
-        const evolutions = pokemonEvolutions[sId] ?? [];
-        for (const evoSpecies of evolutions) {
-          evoLine.add(evoSpecies.speciesId);
-          getEvolutions(evoSpecies.speciesId);
-        }
-      };
-      getEvolutions(species.speciesId);
+      const evoLine: Set<SpeciesId> = new Set([
+        species.speciesId,
+        ...getPreEvolutions(species.speciesId),
+        ...getEvolutions(species.speciesId).values(),
+      ]);
 
       const biomes: Set<string> = new Set(catchableSpecies[starterId].map(b => enumValueToKey(BiomeId, b.biome)));
       for (const sId of evoLine) {

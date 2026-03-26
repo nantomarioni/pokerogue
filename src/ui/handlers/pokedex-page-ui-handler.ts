@@ -4,7 +4,13 @@ import Overrides from "#app/overrides";
 import { speciesEggMoves } from "#balance/moves/egg-moves";
 import { starterPassiveAbilities } from "#balance/passives";
 import type { SpeciesFormEvolution } from "#balance/pokemon-evolutions";
-import { pokemonEvolutions, pokemonPrevolutions, pokemonStarters } from "#balance/pokemon-evolutions";
+import {
+  getEvolutions,
+  getPreEvolutions,
+  pokemonEvolutions,
+  pokemonPrevolutions,
+  pokemonStarters,
+} from "#balance/pokemon-evolutions";
 import { pokemonFormLevelMoves, pokemonSpeciesLevelMoves } from "#balance/pokemon-level-moves";
 import {
   getPassiveCandyCount,
@@ -284,7 +290,6 @@ export class PokedexPageUiHandler extends MessageUiHandler {
   private hasPassive: boolean;
   private hasAbilities: [ability1: number, ability2: number, hiddenAbility: number];
   private biomes: readonly BiomeTierTimeOfDay[] = [];
-  private preBiomes: readonly BiomeTierTimeOfDay[] = [];
   private baseStats: number[];
   private baseTotal: number;
   private evolutions: SpeciesFormEvolution[] = [];
@@ -901,15 +906,17 @@ export class PokedexPageUiHandler extends MessageUiHandler {
 
     this.hasAbilities = [hasAbility1, hasAbility2, hasHiddenAbility];
 
-    // TODO: this is jank, relying on extremely jank data structures that have been removed; refactor
-    const speciesBiomes = catchableSpecies[species.speciesId] ?? [];
-    const starterBiomes = catchableSpecies[this.starterId] ?? [];
-    this.preBiomes = this.filterBiomeFormIndexes(
-      starterBiomes.filter(
-        b => !speciesBiomes.some(bm => b.biome === bm.biome && b.tier === bm.tier) && !(b.biome === BiomeId.TOWN),
-      ),
-      this.starterId,
-    );
+    const evoLine: Set<SpeciesId> = new Set([
+      species.speciesId,
+      ...getPreEvolutions(species.speciesId),
+      ...getEvolutions(species.speciesId).values(),
+    ]);
+    const speciesBiomes: Set<BiomeTierTimeOfDay> = new Set();
+    for (const sId of evoLine) {
+      for (const bttod of catchableSpecies[sId]) {
+        speciesBiomes.add(bttod);
+      }
+    }
     this.biomes = this.filterBiomeFormIndexes(speciesBiomes, species.speciesId);
 
     const allFormChanges = Object.hasOwn(pokemonFormChanges, species.speciesId)
@@ -940,10 +947,8 @@ export class PokedexPageUiHandler extends MessageUiHandler {
   }
 
   // Function to ensure that forms appear in the appropriate biome and tod
-  private filterBiomeFormIndexes(
-    biomes: readonly BiomeTierTimeOfDay[],
-    speciesId: number,
-  ): readonly BiomeTierTimeOfDay[] {
+  private filterBiomeFormIndexes(bttodSet: Set<BiomeTierTimeOfDay>, speciesId: number): readonly BiomeTierTimeOfDay[] {
+    const biomes: readonly BiomeTierTimeOfDay[] = [...bttodSet.values()];
     if (speciesId === SpeciesId.BURMY || speciesId === SpeciesId.WORMADAM) {
       return biomes.filter(b => {
         const formIndex = (() => {
@@ -1551,9 +1556,7 @@ export class PokedexPageUiHandler extends MessageUiHandler {
             this.blockInput = true;
 
             ui.setMode(UiMode.POKEDEX_PAGE, "refresh").then(() => {
-              const noBiomes = !this.biomes || this.biomes.length === 0;
-              const noPreEvoBiomes = !this.preBiomes || this.preBiomes.length === 0;
-              if (noBiomes && noPreEvoBiomes) {
+              if (!this.biomes || this.biomes.length === 0) {
                 ui.showText(i18next.t("pokedexUiHandler:noBiomes"));
                 ui.playError();
                 this.blockInput = false;
@@ -1577,23 +1580,9 @@ export class PokedexPageUiHandler extends MessageUiHandler {
                 for (const bttod of this.biomes) {
                   options.push({
                     label: getBiomeLabel(bttod),
-                    handler: () => false,
-                  });
-                }
-
-                if (this.preBiomes.length > 0) {
-                  options.push({
-                    label: i18next.t("pokedexUiHandler:preBiomes"),
                     skip: true,
                     handler: () => false,
                   });
-
-                  for (const bttod of this.preBiomes) {
-                    options.push({
-                      label: getBiomeLabel(bttod),
-                      handler: () => false,
-                    });
-                  }
                 }
 
                 options.push({
