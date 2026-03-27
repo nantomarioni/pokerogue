@@ -6769,20 +6769,20 @@ export const trainerConfigs: TrainerConfigs = {
     .setEncounterBgm(TrainerType.ACE_TRAINER)
     .setLocalizedName("Expert Pokemon Breeder")
     .setPartyTemplates(new TrainerPartyTemplate(3, PartyMemberStrength.WEAK)),
-  [TrainerType.FUTURE_SELF_M]: new TrainerConfig(++t)
+  [TrainerType.PLAYER_M_ALTERNATE]: new TrainerConfig(++t)
     .setMoneyMultiplier(0)
     .setEncounterBgm("mystery_encounter_weird_dream")
     .setBattleBgm("mystery_encounter_weird_dream")
     .setMixedBattleBgm("mystery_encounter_weird_dream")
     .setVictoryBgm("mystery_encounter_weird_dream")
-    .setLocalizedName("Future Self M")
+    .setLocalizedName("Alternate Player M")
     .setPartyTemplates(new TrainerPartyTemplate(6, PartyMemberStrength.STRONG)),
-  [TrainerType.FUTURE_SELF_F]: new TrainerConfig(++t)
+  [TrainerType.PLAYER_F_ALTERNATE]: new TrainerConfig(++t)
     .setMoneyMultiplier(0)
     .setEncounterBgm("mystery_encounter_weird_dream")
     .setBattleBgm("mystery_encounter_weird_dream")
     .setMixedBattleBgm("mystery_encounter_weird_dream")
     .setVictoryBgm("mystery_encounter_weird_dream")
-    .setLocalizedName("Future Self F")
+    .setLocalizedName("Alternate Player  F")
     .setPartyTemplates(new TrainerPartyTemplate(6, PartyMemberStrength.STRONG)),
 };

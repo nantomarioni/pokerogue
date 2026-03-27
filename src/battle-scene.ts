@@ -2574,6 +2574,8 @@ export class BattleScene extends SceneBase {
         return 127.489;
       case "battle_legendary_kanto": //XY Kanto Legendary Battle
         return 32.966;
+      case "battle_legendary_mew": //Emerald Mew Battle
+        return 13.284;
       case "battle_legendary_raikou": //HGSS Raikou Battle
         return 12.632;
       case "battle_legendary_entei": //HGSS Entei Battle
@@ -2658,10 +2660,14 @@ export class BattleScene extends SceneBase {
         return 17.586;
       case "battle_trainer": //BW Trainer Battle
         return 13.686;
+      case "battle_jacinthe": // Jacinthe Battle
+        return 30.188;
       case "battle_wild": //BW Wild Battle
         return 12.703;
       case "battle_wild_strong": //BW Strong Wild Battle
         return 13.94;
+      case "battle_rogue_mega": //PLZA Rogue Mega Battle
+        return 22.135;
       case "end_summit": //PMD RTDX Sky Tower Summit
         return 30.025;
       case "battle_rocket_grunt": //HGSS Team Rocket Battle
@@ -2710,20 +2716,24 @@ export class BattleScene extends SceneBase {
         return 11.42;
       case "battle_star_boss": //SV Cassiopeia Battle
         return 25.764;
-      case "mystery_encounter_gen_5_gts": // BW GTS
+      case "mystery_encounter_gen_5_gts": //BW GTS
         return 8.52;
-      case "mystery_encounter_gen_6_gts": // XY GTS
+      case "mystery_encounter_gen_6_gts": //XY GTS
         return 9.24;
-      case "mystery_encounter_fun_and_games": // EoS Guildmaster Wigglytuff
+      case "mystery_encounter_fun_and_games": //EoS Guildmaster Wigglytuff
         return 4.78;
-      case "mystery_encounter_weird_dream": // EoS Temporal Spire
+      case "mystery_encounter_weird_dream": //EoS Temporal Spire
         return 41.42;
-      case "mystery_encounter_delibirdy": // Firel Delibirdy
+      case "mystery_encounter_delibirdy": //Firel Delibirdy
         return 82.28;
-      case "title_afd": // Andr06 - PokéRogue Title Remix (AFD)
+      case "title_afd": //Andr06 - PokéRogue Title Remix (AFD)
         return 47.66;
-      case "battle_rival_3_afd": // Andr06 - Final N Battle Remix (AFD)
+      case "title_afd_2": //Andr06 - PokéRogue Title Remix 2 (AFD)
+        return 61.819;
+      case "battle_rival_3_afd": //Andr06 - Final N Battle Remix (AFD)
         return 49.147;
+      case "battle_trainer_afd": //Andr06 - PokéRogue Trainer Remix (AFD)
+        return 13.686;
     }
 
     return 0;
