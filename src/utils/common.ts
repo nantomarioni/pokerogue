@@ -395,6 +395,7 @@ export function hasAllLocalizedSprites(lang?: string): boolean {
   switch (lang) {
     case "es-ES":
     case "es-419":
+    case "eu":
     case "fr":
     case "da":
     case "de":
