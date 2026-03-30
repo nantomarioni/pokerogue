@@ -214,7 +214,7 @@ export const timedEvents: readonly TimedEvent[] = [
         [TrainerType.LARRY, "jacinthe_holo"],
         [TrainerType.RYME, "jacinthe_holo"],
         [TrainerType.TULIP, "jacinthe_holo"],
-        [TrainerType.GRUSHA, "jacinthe_holo"],,
+        [TrainerType.GRUSHA, "jacinthe_holo"],
       ],
     },
     textReplacements: [
