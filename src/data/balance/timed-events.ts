@@ -141,7 +141,6 @@ export const timedEvents: readonly TimedEvent[] = [
         ["79/0", "993/0"],
       ],
       trainerReplacements: [
-      trainerReplacements: [
         [TrainerType.BROCK, "jacinthe_holo"],
         [TrainerType.MISTY, "jacinthe_holo"],
         [TrainerType.LT_SURGE, "jacinthe_holo"],
