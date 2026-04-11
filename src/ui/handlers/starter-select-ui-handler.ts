@@ -3084,10 +3084,8 @@ export class StarterSelectUiHandler extends MessageUiHandler {
     this.filteredStarterContainers = [];
     this.validStarterContainers = [];
 
-    // biome-ignore-start lint/suspicious/useIterableCallbackReturn: benign
     this.pokerusCursorObjs.forEach(cursor => cursor.setVisible(false));
     this.starterCursorObjs.forEach(cursor => cursor.setVisible(false));
-    // biome-ignore-end lint/suspicious/useIterableCallbackReturn: benign
 
     this.filterBar.updateFilterLabels();
 

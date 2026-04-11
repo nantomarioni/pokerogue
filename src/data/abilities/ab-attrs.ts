@@ -2373,7 +2373,6 @@ export class PostSummonRemoveBattlerTagAbAttr extends PostSummonRemoveEffectAbAt
   }
 
   public override apply({ pokemon }: AbAttrBaseParams): void {
-    // biome-ignore lint/suspicious/useIterableCallbackReturn: the return type of `removeTag` is `void`
     this.immuneTags.forEach(tagType => pokemon.removeTag(tagType));
   }
 }
