@@ -3918,18 +3918,14 @@ export abstract class Pokemon extends Phaser.GameObjects.Container {
       simulated,
       damage,
     };
-    /** Apply this Pokemon's post-calc defensive modifiers (e.g. Fur Coat) */
+    // Apply this Pokemon's post-calc defensive modifiers (e.g. Fur Coat)
     if (!ignoreAbility) {
       applyAbAttrs("ReceivedMoveDamageMultiplierAbAttr", abAttrParams);
 
       const ally = this.getAlly();
-      /** Additionally apply friend guard damage reduction if ally has it. */
-      if (globalScene.currentBattle.double && ally != null && ally.isActive(true)) {
-        applyAbAttrs("AlliedFieldDamageReductionAbAttr", {
-          ...abAttrParams,
-          // Same parameters as before, except we are applying the ally's ability
-          pokemon: ally,
-        });
+      // Additionally apply friend guard damage reduction if ally has it.
+      if (globalScene.currentBattle.double && ally?.isActive(true)) {
+        applyAbAttrs("AlliedFieldDamageReductionAbAttr", { ...abAttrParams, pokemon: ally });
       }
     }
 
@@ -3940,7 +3936,7 @@ export abstract class Pokemon extends Phaser.GameObjects.Container {
       applyAbAttrs("PreDefendFullHpEndureAbAttr", abAttrParams);
     }
 
-    // debug message for when damage is applied (i.e. not simulated)
+    // debug message for when damage is applied
     if (!simulated) {
       console.log(`Move: ${move.name} | Attack damage: ${damage.value}`);
     }
