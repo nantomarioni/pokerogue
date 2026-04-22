@@ -216,6 +216,8 @@ await i18next
       defaultNS: "menu",
       detection: {
         lookupLocalStorage: "prLang",
+        caches: ["localStorage"],
+        order: ["localStorage", "navigator"],
       },
       ns: nsEn,
       debug: import.meta.env.VITE_I18N_DEBUG === "1",
