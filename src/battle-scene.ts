@@ -3733,14 +3733,12 @@ export class BattleScene extends SceneBase {
     }
 
     // Check for queued encounters first
-    if (
-      !encounter
-      && this.mysteryEncounterSaveData?.queuedEncounters
-      && this.mysteryEncounterSaveData.queuedEncounters.length > 0
-    ) {
+    // TODO: the inner `while` loop will never run, should this code be deleted or fixed?
+    const queuedEncounters = this.mysteryEncounterSaveData?.queuedEncounters ?? [];
+    if (!encounter && queuedEncounters.length > 0) {
       let i = 0;
-      while (i < this.mysteryEncounterSaveData.queuedEncounters.length && !!encounter) {
-        const candidate = this.mysteryEncounterSaveData.queuedEncounters[i];
+      while (i < queuedEncounters.length && encounter) {
+        const candidate = queuedEncounters[i];
         const forcedChance = candidate.spawnPercent;
         if (randSeedInt(100) < forcedChance) {
           encounter = allMysteryEncounters[candidate.type];
