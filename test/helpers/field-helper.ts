@@ -9,7 +9,7 @@ import { GameManagerHelper } from "#test/helpers/game-manager-helper";
 import type { MoveHelper } from "#test/helpers/move-helper";
 import { getEnumStr } from "#test/utils/string-utils";
 import { sortInSpeedOrder } from "#utils/speed-order";
-import { expect, type Mock, type MockInstance, vi } from "vitest";
+import { expect, type MockInstance, vi } from "vitest";
 
 /** Helper to manage pokemon */
 export class FieldHelper extends GameManagerHelper {
@@ -134,15 +134,23 @@ export class FieldHelper extends GameManagerHelper {
    * @throws {Error}
    * Fails test if `pokemon` cannot have its Tera Type changed
    * (such as being part of a species with fixed Tera Types).
+   * @returns The newly created {@linkcode MockInstance} objects
+   * used to override {@linkcode Pokemon.isTerastallized} and {@linkcode Pokemon.teraType}.
    */
   public forceTera(
     pokemon: Pokemon,
     teraType?: Exclude<PokemonType, PokemonType.UNKNOWN>,
-  ): [Mock<() => boolean>, Mock<() => PokemonType>];
+  ): [
+    isTerrastalizedMock: MockInstance<() => Pokemon["isTerastallized"]>,
+    teraTypeMock: MockInstance<() => Pokemon["teraType"]>,
+  ];
   public forceTera(
     pokemon: Pokemon,
     teraType: PokemonType = pokemon.getSpeciesForm(true).type1,
-  ): [Mock<() => boolean>, Mock<() => PokemonType>] {
+  ): [
+    isTerrastalizedMock: MockInstance<() => Pokemon["isTerastallized"]>,
+    teraTypeMock: MockInstance<() => Pokemon["teraType"]>,
+  ] {
     if (pokemon.getTeraType() !== pokemon.teraType) {
       expect.fail(
         `Cannot alter the Tera Type of fixed-tera Pokemon ${pokemon.name}!`
@@ -150,9 +158,9 @@ export class FieldHelper extends GameManagerHelper {
       );
     }
 
-    const isTerastallizedSpy = vi.spyOn(pokemon, "isTerastallized", "get").mockReturnValue(true);
-    const teraTypeSpy = vi.spyOn(pokemon, "teraType", "get").mockReturnValue(teraType);
+    const isTerastallizedMock = vi.spyOn(pokemon, "isTerastallized", "get").mockReturnValue(true);
+    const teraTypeMock = vi.spyOn(pokemon, "teraType", "get").mockReturnValue(teraType);
 
-    return [isTerastallizedSpy, teraTypeSpy];
+    return [isTerastallizedMock, teraTypeMock];
   }
 }
