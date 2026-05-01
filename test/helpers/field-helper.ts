@@ -141,14 +141,14 @@ export class FieldHelper extends GameManagerHelper {
     pokemon: Pokemon,
     teraType?: Exclude<PokemonType, PokemonType.UNKNOWN>,
   ): [
-    isTerrastalizedMock: MockInstance<() => Pokemon["isTerastallized"]>,
+    isTerastallizedMock: MockInstance<() => Pokemon["isTerastallized"]>,
     teraTypeMock: MockInstance<() => Pokemon["teraType"]>,
   ];
   public forceTera(
     pokemon: Pokemon,
     teraType: PokemonType = pokemon.getSpeciesForm(true).type1,
   ): [
-    isTerrastalizedMock: MockInstance<() => Pokemon["isTerastallized"]>,
+    isTerastallizedMock: MockInstance<() => Pokemon["isTerastallized"]>,
     teraTypeMock: MockInstance<() => Pokemon["teraType"]>,
   ] {
     if (pokemon.getTeraType() !== pokemon.teraType) {
