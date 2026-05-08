@@ -2469,7 +2469,10 @@ export class CritBoostTag extends SerializableBattlerTag {
     super.onAdd(pokemon);
 
     // Dragon cheer adds +2 crit stages if the pokemon is a Dragon type when the tag is added
-    if (this.tagType === BattlerTagType.DRAGON_CHEER && !pokemon.isOfType(PokemonType.DRAGON, true, true)) {
+    if (
+      this.tagType === BattlerTagType.DRAGON_CHEER
+      && !pokemon.isOfType(PokemonType.DRAGON, { returnOriginalTypesIfStellar: true })
+    ) {
       (this as Mutable<this>).critStages = 1;
     } else {
       (this as Mutable<this>).critStages = 2;
@@ -2649,8 +2652,9 @@ export class RoostedTag extends BattlerTag {
 
   onRemove(pokemon: Pokemon): void {
     const currentTypes = pokemon.getTypes();
-    const baseTypes = pokemon.getTypes(false, false, true);
+    const baseTypes = pokemon.getTypes({ includeTeraType: false, bypassSummonData: true, ignoreThirdType: true });
 
+    // TODO: this is very wrong
     const forestsCurseApplied: boolean =
       currentTypes.includes(PokemonType.GRASS) && !baseTypes.includes(PokemonType.GRASS);
     const trickOrTreatApplied: boolean =
@@ -2674,7 +2678,7 @@ export class RoostedTag extends BattlerTag {
 
   onAdd(pokemon: Pokemon): void {
     const currentTypes = pokemon.getTypes();
-    const baseTypes = pokemon.getTypes(false, false, true);
+    const baseTypes = pokemon.getTypes({ includeTeraType: false, bypassSummonData: true, ignoreThirdType: true });
 
     const isOriginallyDualType = baseTypes.length === 2;
     const isCurrentlyDualType = currentTypes.length === 2;
