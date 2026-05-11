@@ -4597,7 +4597,7 @@ export abstract class Pokemon extends Phaser.GameObjects.Container {
     await this.loadAssets();
     this.calculateStats();
     globalScene.updateModifiers(this.isPlayer(), true);
-    await Promise.all([this.updateInfo(), globalScene.updateFieldScale()]);
+    await Promise.all([this.updateInfo(this.isFainted()), globalScene.updateFieldScale()]);
   }
 
   /**
