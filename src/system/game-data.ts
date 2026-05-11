@@ -1852,8 +1852,8 @@ export class GameData {
    * Adds candy to the player's game data for a given {@linkcode PokemonSpecies}.
    * @remarks
    * Will not increase the candy count past {@linkcode MAX_STARTER_CANDY_COUNT}.
-   * @param speciesId - The species ID of the Pokémon to increment candy for
-   * @param numCandiesToAdd - The number of candies to add to the Pokémon
+   * @param speciesId - The species ID of the PokÃ©mon to increment candy for
+   * @param numCandiesToAdd - The number of candies to add to the PokÃ©mon
    * @returns Whether the candy count was incremented
    */
   public addStarterCandy(speciesId: SpeciesId, numCandiesToAdd: number): boolean {
