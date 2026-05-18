@@ -8,7 +8,7 @@
 import chalk from "chalk";
 import { Octokit } from "octokit";
 import { CONFIG, type Label } from "./config.mts";
-import { formatChangelog, type PullRequest } from "./format.mjs";
+import { formatChangelog, type PullRequest } from "./format.mts";
 
 chalk.level = 2;
 
