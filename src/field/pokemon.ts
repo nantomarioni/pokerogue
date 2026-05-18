@@ -3989,32 +3989,36 @@ export abstract class Pokemon extends Phaser.GameObjects.Container {
   /**
    * Submethod called by {@linkcode damageAndUpdate} to apply damage to this Pokemon and adjust its HP.
    * @param damage - The damage to deal
-   * @param _ignoreSegments - Whether to ignore boss segments; default `false`
-   * @param preventEndure - Whether to allow the damage to bypass an Endure/Sturdy effect
-   * @param ignoreFaintPhase - Whether to ignore adding a FaintPhase if this damage causes a faint
+   * @param ignoreSegments - (Default `false`) Whether to ignore boss segments
+   * @param preventEndure - (Default `false`) Whether to allow the damage to bypass an Endure/Sturdy effect
+   * @param ignoreFaintPhase - (Default `false`) Whether to ignore adding a FaintPhase if this damage causes a faint
    * @returns The actual damage dealt
    */
   // TODO: Rework this to use an object for the optional parameters
   // TODO: Remove uses of this outside of the `Pokemon` class and subclasses and change to `protected`
   // Known violators: Pain Split, Status effect code
-  damage(damage: number, _ignoreSegments = false, preventEndure = false, ignoreFaintPhase = false): number {
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: param used by subclass
+  damage(damage: number, ignoreSegments = false, preventEndure = false, ignoreFaintPhase = false): number {
     if (this.isFainted()) {
       return 0;
     }
-    const surviveDamage = new BooleanHolder(false);
 
-    // check for endure and other abilities that would prevent us from death
     if (!preventEndure && this.hp - damage <= 0) {
+      const surviveDamage = new ValueHolder(false);
+
       if (this.hp >= 1 && this.getTag(BattlerTagType.ENDURING)) {
         surviveDamage.value = this.lapseTag(BattlerTagType.ENDURING);
-      } else if (this.hp > 1 && this.getTag(BattlerTagType.STURDY)) {
-        surviveDamage.value = this.lapseTag(BattlerTagType.STURDY);
+      } else if (this.hp === this.getMaxHp() && this.getTag(BattlerTagType.STURDY)) {
+        surviveDamage.value = true;
+        this.lapseTag(BattlerTagType.STURDY);
       } else if (this.hp >= 1 && this.getTag(BattlerTagType.ENDURE_TOKEN)) {
         surviveDamage.value = this.lapseTag(BattlerTagType.ENDURE_TOKEN);
       }
+
       if (!surviveDamage.value) {
         globalScene.applyModifiers(SurviveDamageModifier, this.isPlayer(), this, surviveDamage);
       }
+
       if (surviveDamage.value) {
         damage = this.hp - 1;
       }
@@ -4022,11 +4026,13 @@ export abstract class Pokemon extends Phaser.GameObjects.Container {
 
     damage = Math.min(damage, this.hp);
     this.hp -= damage;
+
     if (this.isFainted() && !ignoreFaintPhase) {
       globalScene.phaseManager.queueFaintPhase(this.getBattlerIndex(), preventEndure);
       this.destroySubstitute();
       this.lapseTag(BattlerTagType.COMMANDED);
     }
+
     return damage;
   }
 
@@ -7009,10 +7015,6 @@ export class EnemyPokemon extends Pokemon {
     return 0;
   }
 
-  /**
-   * @inheritdoc
-   * @param ignoreSegments - Whether to ignore boss segments when applying damage
-   */
   public damage(damage: number, ignoreSegments = false, preventEndure = false, ignoreFaintPhase = false): number {
     if (this.isFainted()) {
       return 0;
