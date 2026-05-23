@@ -250,7 +250,7 @@ export class GameStatsUiHandler extends UiHandler {
     const resolvedLang = i18next.resolvedLanguage ?? "en";
     // NOTE TO TRANSLATION TEAM: Add more languages that want to display
     // in a single-column inside of the `[]` (e.g. `["ru", "fr"]`)
-    return [
+    const singleColumnLanguages = [
       "fr",
       "es-ES",
       "es-419",
@@ -266,7 +266,8 @@ export class GameStatsUiHandler extends UiHandler {
       "eu",
       "vi",
       "pl",
-    ].includes(resolvedLang);
+    ];
+    return singleColumnLanguages.includes(resolvedLang);
   }
   /** The number of columns used by this menu in the resolved language */
   private get columnCount(): 1 | 2 {

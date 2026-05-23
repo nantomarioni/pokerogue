@@ -24,14 +24,14 @@ export class EggGachaUiHandler extends MessageUiHandler {
   private eggGachaOptionsContainer: Phaser.GameObjects.Container;
   private eggGachaOptionSelectBg: Phaser.GameObjects.NineSlice;
 
-  private gachaContainers: Phaser.GameObjects.Container[];
-  private gachaKnobs: Phaser.GameObjects.Sprite[];
-  private gachaHatches: Phaser.GameObjects.Sprite[];
-  private gachaInfoContainers: Phaser.GameObjects.Container[];
+  private readonly gachaContainers: Phaser.GameObjects.Container[];
+  private readonly gachaKnobs: Phaser.GameObjects.Sprite[];
+  private readonly gachaHatches: Phaser.GameObjects.Sprite[];
+  private readonly gachaInfoContainers: Phaser.GameObjects.Container[];
   private eggGachaOverlay: Phaser.GameObjects.Rectangle;
   private eggGachaSummaryContainer: Phaser.GameObjects.Container;
 
-  private voucherCountLabels: Phaser.GameObjects.Text[];
+  private readonly voucherCountLabels: Phaser.GameObjects.Text[];
 
   private gachaCursor: number;
 
@@ -39,14 +39,14 @@ export class EggGachaUiHandler extends MessageUiHandler {
   private transitioning: boolean;
   private transitionCancelled: boolean;
   private summaryFinished: boolean;
-  private defaultText: string;
+  private readonly defaultText: string;
 
   /** The tween chain playing the egg drop animation sequence */
   private eggDropTweenChain?: Phaser.Tweens.TweenChain | undefined;
 
   private scale = 0.1666666667;
 
-  private legendaryExpiration = addTextObject(0, 0, "", TextStyle.WINDOW_ALT);
+  private readonly legendaryExpiration = addTextObject(0, 0, "", TextStyle.WINDOW_ALT);
   private playTimeTimer: Phaser.Time.TimerEvent | null;
 
   constructor() {
@@ -82,11 +82,23 @@ export class EggGachaUiHandler extends MessageUiHandler {
     let pokemonIconX = -20;
     let pokemonIconY = 6;
 
-    if (
-      ["de", "es-ES", "es-419", "fr", "ko", "pt-BR", "ja", "ru", "uk", "tr", "eu", "id", "vi", "pl"].includes(
-        currentLanguage,
-      )
-    ) {
+    const smallTextLanguages = [
+      "de",
+      "es-ES",
+      "es-419",
+      "fr",
+      "ko",
+      "pt-BR",
+      "ja",
+      "ru",
+      "uk",
+      "tr",
+      "eu",
+      "id",
+      "vi",
+      "pl",
+    ];
+    if (smallTextLanguages.includes(currentLanguage)) {
       gachaTextStyle = TextStyle.SMALLER_WINDOW_ALT;
       gachaX = 2;
       gachaY = 2;
