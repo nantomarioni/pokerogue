@@ -98,16 +98,16 @@ const languageSettings: { [key: string]: LanguageSetting } = {
     starterInfoXPos: 35,
   },
   "es-ES": {
-    starterInfoTextSize: "50px",
+    starterInfoTextSize: "52px",
     instructionTextSize: "28px",
     starterInfoYOffset: 0.5,
-    starterInfoXPos: 38,
+    starterInfoXPos: 39,
   },
   "es-419": {
     starterInfoTextSize: "50px",
     instructionTextSize: "28px",
     starterInfoYOffset: 0.5,
-    starterInfoXPos: 38,
+    starterInfoXPos: 37,
   },
   fr: {
     starterInfoTextSize: "54px",
@@ -118,10 +118,9 @@ const languageSettings: { [key: string]: LanguageSetting } = {
     instructionTextSize: "28px",
   },
   "pt-BR": {
-    starterInfoTextSize: "48px",
-    instructionTextSize: "32px",
-    starterInfoYOffset: 0.5,
-    starterInfoXPos: 33,
+    starterInfoTextSize: "54px",
+    instructionTextSize: "28px",
+    starterInfoXPos: 37,
   },
   zh: {
     starterInfoTextSize: "56px",
@@ -172,10 +171,6 @@ const languageSettings: { [key: string]: LanguageSetting } = {
     instructionTextSize: "28px",
     starterInfoYOffset: 0.5,
   },
-  ro: {
-    starterInfoTextSize: "56px",
-    instructionTextSize: "28px",
-  },
   ru: {
     starterInfoTextSize: "46px",
     instructionTextSize: "28px",
@@ -205,10 +200,6 @@ const languageSettings: { [key: string]: LanguageSetting } = {
     starterInfoXPos: 34,
   },
   tl: {
-    starterInfoTextSize: "56px",
-    instructionTextSize: "28px",
-  },
-  "nb-NO": {
     starterInfoTextSize: "56px",
     instructionTextSize: "28px",
   },
