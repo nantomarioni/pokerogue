@@ -2280,8 +2280,11 @@ export class StarterSelectUiHandler extends MessageUiHandler {
                   }
                   return false;
                 },
+                style: this.isPassiveAvailable(this.lastSpecies.speciesId) ? TextStyle.WINDOW : TextStyle.SHADOW_TEXT,
                 item: "candy",
-                itemArgs: starterColors[this.lastSpecies.speciesId],
+                itemArgs: this.isPassiveAvailable(this.lastSpecies.speciesId)
+                  ? starterColors[this.lastSpecies.speciesId]
+                  : ["808080", "808080"],
               });
             }
 
@@ -2321,8 +2324,13 @@ export class StarterSelectUiHandler extends MessageUiHandler {
                   }
                   return false;
                 },
+                style: this.isValueReductionAvailable(this.lastSpecies.speciesId)
+                  ? TextStyle.WINDOW
+                  : TextStyle.SHADOW_TEXT,
                 item: "candy",
-                itemArgs: starterColors[this.lastSpecies.speciesId],
+                itemArgs: this.isValueReductionAvailable(this.lastSpecies.speciesId)
+                  ? starterColors[this.lastSpecies.speciesId]
+                  : ["808080", "808080"],
               });
             }
 
@@ -2380,8 +2388,13 @@ export class StarterSelectUiHandler extends MessageUiHandler {
                 }
                 return false;
               },
+              style: this.isSameSpeciesEggAvailable(this.lastSpecies.speciesId)
+                ? TextStyle.WINDOW
+                : TextStyle.SHADOW_TEXT,
               item: "candy",
-              itemArgs: starterColors[this.lastSpecies.speciesId],
+              itemArgs: this.isSameSpeciesEggAvailable(this.lastSpecies.speciesId)
+                ? starterColors[this.lastSpecies.speciesId]
+                : ["808080", "808080"],
             });
             options.push({
               label: i18next.t("menu:cancel"),
