@@ -8,7 +8,7 @@ import type { AbilityId } from "#enums/ability-id";
 import type { BerryType } from "#enums/berry-type";
 import type { MoveId } from "#enums/move-id";
 import type { Nature } from "#enums/nature";
-import type { PokemonType } from "#enums/pokemon-type";
+import type { PokemonType, RegularPokemonType } from "#enums/pokemon-type";
 import type { SpeciesId } from "#enums/species-id";
 import { StatusEffect } from "#enums/status-effect";
 import type { Pokemon } from "#field/pokemon";
@@ -26,15 +26,12 @@ import { getPokemonSpecies, getPokemonSpeciesForm } from "#utils/pokemon-utils";
  */
 export class CustomPokemonData {
   // TODO: Change the default value for all these from -1 to something a bit more sensible
-  /**
-   * The scale at which to render this Pokemon's sprite.
-   */
+  /** The scale at which to render this Pokemon's sprite. */
   public spriteScale = -1;
   public ability: AbilityId | -1;
   public passive: AbilityId | -1;
   public nature: Nature | -1;
-  // TODO: Change default value from `PokemonType.UNKNOWN` to `null` for easier checking;
-  public types: PokemonType[];
+  public types: (RegularPokemonType | null)[];
   /** @deprecated Left in for save migration, do not use */
   // TODO: Remove this once pre-session migration is implemented
   public hitsRecCount: number | null = null;
@@ -55,19 +52,20 @@ export class CustomPokemonData {
  * @returns The `PokemonSpeciesForm` or `null` if the fields could not be properly discerned
  */
 function deserializePokemonSpeciesForm(value: SerializedSpeciesForm | PokemonSpeciesForm): PokemonSpeciesForm | null {
-  // @ts-expect-error: We may be deserializing a PokemonSpeciesForm, but we catch later on
-  let { id, formIdx } = value;
+  // assume the input was a `SerializedSpeciesForm` to prevent type errors
+  let { id, formIdx } = value as Partial<SerializedSpeciesForm>;
 
+  // handle the case where a `PokemonSpeciesForm` was passed in
   if (id == null || formIdx == null) {
-    // @ts-expect-error: Typescript doesn't know that in block, `value` must be a PokemonSpeciesForm
-    id = value.speciesId;
-    // @ts-expect-error: Same as above (plus we are accessing a protected property)
-    formIdx = value._formIndex;
+    id = value["speciesId"];
+    formIdx = value["_formIndex"];
   }
-  // If for some reason either of these fields are null/undefined, we cannot reconstruct the species form
+
+  // If for some reason either of these fields are `null`/`undefined`, we cannot reconstruct the species form
   if (id == null || formIdx == null) {
     return null;
   }
+
   return getPokemonSpeciesForm(id, formIdx);
 }
 
