@@ -325,6 +325,11 @@ export abstract class PokemonSpeciesForm {
       case SpeciesFormKey.MEGA:
       case SpeciesFormKey.MEGA_X:
       case SpeciesFormKey.MEGA_Y:
+      case SpeciesFormKey.MEGA_Z:
+      case SpeciesFormKey.MEGA_ORIGINAL:
+      case SpeciesFormKey.MEGA_CURLY:
+      case SpeciesFormKey.MEGA_DROOPY:
+      case SpeciesFormKey.MEGA_STRETCHY:
       case SpeciesFormKey.PRIMAL:
       case SpeciesFormKey.GIGANTAMAX:
       case SpeciesFormKey.ETERNAMAX:
@@ -532,6 +537,7 @@ export abstract class PokemonSpeciesForm {
         case SpeciesFormKey.MEGA:
         case SpeciesFormKey.MEGA_X:
         case SpeciesFormKey.MEGA_Y:
+        case SpeciesFormKey.MEGA_Z:
         case SpeciesFormKey.PRIMAL:
         case SpeciesFormKey.GIGANTAMAX:
         case SpeciesFormKey.GIGANTAMAX_SINGLE:
@@ -569,6 +575,12 @@ export abstract class PokemonSpeciesForm {
         case "dusk-mane":
         case "ultra":
           ret += `-${formKey}`;
+          break;
+        case SpeciesFormKey.MEGA_ORIGINAL:
+        case SpeciesFormKey.MEGA_CURLY:
+        case SpeciesFormKey.MEGA_DROOPY:
+        case SpeciesFormKey.MEGA_STRETCHY:
+          ret += `-${SpeciesFormKey.MEGA}`;
           break;
       }
       switch (this.speciesId) {
@@ -876,7 +888,14 @@ export class PokemonSpecies extends PokemonSpeciesForm implements Localizable {
         case SpeciesFormKey.ETERNAMAX:
         case SpeciesFormKey.MEGA_X:
         case SpeciesFormKey.MEGA_Y:
+        case SpeciesFormKey.MEGA_Z:
           key = form.formKey;
+          break;
+        case SpeciesFormKey.MEGA_ORIGINAL:
+        case SpeciesFormKey.MEGA_CURLY:
+        case SpeciesFormKey.MEGA_DROOPY:
+        case SpeciesFormKey.MEGA_STRETCHY:
+          key = "mega";
           break;
         default:
           if (form.formKey.indexOf(SpeciesFormKey.GIGANTAMAX) > -1) {
@@ -944,6 +963,7 @@ export class PokemonSpecies extends PokemonSpeciesForm implements Localizable {
         SpeciesFormKey.MEGA,
         SpeciesFormKey.MEGA_X,
         SpeciesFormKey.MEGA_Y,
+        SpeciesFormKey.MEGA_Z,
         SpeciesFormKey.PRIMAL,
         SpeciesFormKey.GIGANTAMAX,
         SpeciesFormKey.GIGANTAMAX_RAPID,
@@ -954,6 +974,17 @@ export class PokemonSpecies extends PokemonSpeciesForm implements Localizable {
       return append
         ? i18next.t(`battlePokemonForm:${toCamelCase(formKey)}`, { pokemonName: this.name })
         : i18next.t(`pokemonForm:battleForm.${toCamelCase(formKey)}`);
+    } else if (
+      [
+        SpeciesFormKey.MEGA_ORIGINAL,
+        SpeciesFormKey.MEGA_CURLY,
+        SpeciesFormKey.MEGA_DROOPY,
+        SpeciesFormKey.MEGA_STRETCHY,
+      ].includes(formKey as SpeciesFormKey)
+    ) {
+      return append
+        ? i18next.t(`battlePokemonForm:${toCamelCase(SpeciesFormKey.MEGA)}`, { pokemonName: this.name })
+        : i18next.t(`pokemonForm:battleForm.${toCamelCase(SpeciesFormKey.MEGA)}`);
     } else if (
       region === Region.NORMAL
       || (this.speciesId === SpeciesId.GALAR_DARMANITAN && formIndex > 0)
