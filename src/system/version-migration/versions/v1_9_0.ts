@@ -12,13 +12,13 @@ function updatePokemonMoveset(data: Record<string, unknown>): void {
   if (data.customPokemonData && typeof data.customPokemonData["hitsRecCount"] === "number") {
     // cast is safe since we check the presence of hitCount above.
     (data.battleData as { hitCount?: number }).hitCount = data.customPokemonData["hitsRecCount"];
-    data.customPokemonData["hitsRecCount"] = null;
+    // biome-ignore lint/performance/noDelete: intentional, the field doesn't exist anymore
+    delete data.customPokemonData["hitsRecCount"];
   }
 }
 
 /**
-    // biome-ignore lint/performance/noDelete: intentional, the field doesn't exist anymore
-    delete data.customPokemonData["hitsRecCount"];
+ * Migrate all lingering rage fist data inside `CustomPokemonData`,
  * as well as enforcing default values across the board.
  * @param data - {@linkcode SystemSaveData}
  */
