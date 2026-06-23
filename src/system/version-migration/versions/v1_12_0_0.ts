@@ -234,6 +234,9 @@ const migrateSpeciesSplitSession: SessionSaveMigrator = {
       monoGenChallenge = challenges.find(c => c.id === 0)?.value as number;
     }
 
+    if (data.enemyParty == null) {
+      data.enemyParty = [];
+    }
     if (!validateIsArrayOfObjects(data.party) || !validateIsArrayOfObjects(data.enemyParty)) {
       console.warn(
         "Malformed party/enemyParty in save data, skipping battle bond Greninja and hisui basculin migrator",
