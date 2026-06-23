@@ -13,8 +13,8 @@ export const timedEvents: readonly TimedEvent[] = [
     eventType: EventType.SHINY,
     startDate: new Date(Date.UTC(2026, 5, 23)),
     endDate: new Date(Date.UTC(2026, 6, 13)),
-    bannerKey: "pride2026-event",
-    scale: 0.19,
+    bannerKey: "pride2026",
+    scale: 0.21,
     availableLangs: [
       "en",
       "fr",
