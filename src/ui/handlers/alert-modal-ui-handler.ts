@@ -17,7 +17,7 @@ export class AlertModalUiHandler extends ModalUiHandler {
   }
 
   getWidth(): number {
-    return 160;
+    return 250;
   }
 
   getHeight(): number {
