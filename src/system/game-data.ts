@@ -74,7 +74,7 @@ import { RUN_HISTORY_LIMIT } from "#ui/run-history-ui-handler";
 import { applyChallenges } from "#utils/challenge-utils";
 import { fixedInt, NumberHolder, randInt, randSeedItem } from "#utils/common";
 import { decrypt, encrypt } from "#utils/data";
-import { getEnumKeys } from "#utils/enums";
+import { getEnumKeys, getEnumValues } from "#utils/enums";
 import { getPokemonSpecies } from "#utils/pokemon-utils";
 import { toCamelCase } from "#utils/strings";
 import { AES, enc } from "crypto-js";
@@ -214,9 +214,63 @@ export class GameData {
     return this.unlocks[unlockable];
   }
 
+  /**
+   * @returns Whether the system data is valid
+   */
+  private validateSystemData(data: SystemSaveData): boolean {
+    if (data.starterData == null) {
+      console.error("Starter data missing!");
+      return false;
+    }
+
+    for (const speciesId of getEnumValues(SpeciesId)) {
+      if (!speciesDataRegistry.isStarter(speciesId) || defaultStarterSpecies.includes(speciesId)) {
+        continue;
+      }
+
+      const starterEntry = data.starterData[speciesId];
+      const dexEntry = data.dexData[speciesId];
+
+      const species = SpeciesId[speciesId];
+
+      if (starterEntry == null) {
+        console.error("Missing starter data for %s (%d)!", species, speciesId);
+        return false;
+      }
+      if (dexEntry == null) {
+        console.error("Missing dex data for %s (%d)!", species, speciesId);
+        return false;
+      }
+
+      const hasStarterData =
+        starterEntry.abilityAttr > 1
+        || starterEntry.eggMoves > 0
+        || starterEntry.moveset != null
+        || starterEntry.passiveAttr > 0
+        || starterEntry.valueReduction > 0;
+
+      const noDexData = dexEntry.caughtCount === 0 && dexEntry.hatchedCount === 0 && dexEntry.caughtAttr === 0n;
+
+      if (hasStarterData && noDexData) {
+        console.error("Corrupt save data detected, save rejected!");
+        console.warn("Species: %s (%d)", species, speciesId);
+        console.warn(starterEntry);
+        console.warn(dexEntry);
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   public async saveSystem(): Promise<boolean> {
     globalScene.ui.savingIcon.show();
     const data = this.getSystemSaveData();
+
+    if (!this.validateSystemData(data)) {
+      globalScene.ui.savingIcon.hide();
+      return false;
+    }
 
     const maxIntAttrValue = 0x80000000;
     const systemData = JSON.stringify(data, (_k: any, v: any) =>
@@ -1255,6 +1309,13 @@ export class GameData {
     const systemData = useCachedSystem
       ? GameData.parseSystemData(decrypt(localStorage.getItem(`data_${loggedInUser?.username}`)!, bypassLogin))
       : this.getSystemSaveData(); // TODO: is this bang correct?
+
+    if (!this.validateSystemData(systemData)) {
+      if (sync) {
+        globalScene.ui.savingIcon.hide();
+      }
+      return false;
+    }
 
     const request = {
       system: systemData,
