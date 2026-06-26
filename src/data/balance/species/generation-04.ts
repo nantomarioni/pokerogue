@@ -7390,6 +7390,7 @@ export function initGenerationFour(): SpeciesDataMapConfig {
     evolutions: [],
     passives: AbilityId.POISON_HEAL,
     levelMoves: [
+      [1, MoveId.TACKLE],
       [1, MoveId.ACID],
       [1, MoveId.LICK],
       [5, MoveId.SUPERSONIC],
