@@ -89,18 +89,12 @@ function pullEggs(pullCount: number, ownedStarters: SpeciesId[]): EggData[] {
     }
   }
 
-  globalScene.time.delayedCall(fixedInt(2000), () => {
-    globalScene.ui.setOverlayMode(
+  globalScene.time.delayedCall(fixedInt(2000), async () => {
+    await globalScene.ui.setOverlayMode(
       UiMode.ALERT_MODAL,
-      i18next.t("migrators:eggCompensation", {
-        eggCount: eggs.length,
-      }),
+      i18next.t("migrators:eggCompensation", { eggCount: eggs.length }),
+      5000,
     );
-    globalScene.time.delayedCall(fixedInt(15000), () => {
-      if (globalScene.ui.getMode() === UiMode.ALERT_MODAL) {
-        globalScene.ui.revertMode();
-      }
-    });
   });
 
   return eggs;
