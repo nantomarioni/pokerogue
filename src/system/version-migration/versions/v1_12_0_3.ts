@@ -11,6 +11,7 @@ import { EggData } from "#system/egg-data";
 import { VoucherType } from "#system/voucher";
 import type { DexData, DexEntry } from "#types/dex-data";
 import type { SystemSaveMigrator } from "#types/save-migrators";
+import type { AwaitableUiHandler } from "#ui/awaitable-ui-handler";
 import { fixedInt, randSeedItem } from "#utils/common";
 import i18next from "i18next";
 
@@ -90,11 +91,13 @@ function pullEggs(pullCount: number, ownedStarters: SpeciesId[]): EggData[] {
   }
 
   globalScene.time.delayedCall(fixedInt(2000), async () => {
-    await globalScene.ui.setOverlayMode(
-      UiMode.ALERT_MODAL,
-      i18next.t("migrators:eggCompensation", { eggCount: eggs.length }),
-      5000,
-    );
+    if (!globalScene.ui.getHandler<AwaitableUiHandler>().tutorialActive) {
+      await globalScene.ui.setOverlayMode(
+        UiMode.ALERT_MODAL,
+        i18next.t("migrators:eggCompensation", { eggCount: eggs.length }),
+        15000,
+      );
+    }
   });
 
   return eggs;
