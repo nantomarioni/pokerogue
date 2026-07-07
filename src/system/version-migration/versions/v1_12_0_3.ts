@@ -95,7 +95,7 @@ function pullEggs(pullCount: number, ownedStarters: SpeciesId[]): EggData[] {
       await globalScene.ui.setOverlayMode(
         UiMode.ALERT_MODAL,
         i18next.t("migrators:eggCompensation", { eggCount: eggs.length }),
-        15000,
+        5000,
       );
     }
   });
@@ -104,6 +104,7 @@ function pullEggs(pullCount: number, ownedStarters: SpeciesId[]): EggData[] {
 }
 
 const shinyCompensationMigrator: SystemSaveMigrator = {
+  name: "shinyCompensationMigrator",
   version: "1.12.0.3",
   migrate: (data): void => {
     const defaultStarterCount = getStarters(
@@ -151,6 +152,7 @@ const shinyCompensationMigrator: SystemSaveMigrator = {
 };
 
 const voucherCompensationMigrator: SystemSaveMigrator = {
+  name: "voucherCompensationMigrator",
   version: "1.12.0.3",
   migrate: (data): void => {
     if (
@@ -171,6 +173,7 @@ const voucherCompensationMigrator: SystemSaveMigrator = {
 
 // a copy of the 1.12.0.1 migrator with the `.abilityAttr` check fixed
 const fixDexData: SystemSaveMigrator = {
+  name: "fixDexData",
   version: "1.12.0.3",
   migrate: (data): void => {
     const defaultStarterAttr =
