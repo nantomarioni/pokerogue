@@ -1710,6 +1710,7 @@ export class BattleScene extends SceneBase {
       }
     }
   }
+
   updateFieldScale(): Promise<void> {
     return new Promise(resolve => {
       const fieldScale =
