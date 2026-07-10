@@ -1700,6 +1700,11 @@ export class BattleScene extends SceneBase {
     }
 
     for (const key of keysToClear) {
+      if (this.anims.exists(key)) {
+        console.log(`Removing animation for key ${key}..`);
+        this.anims.remove(key);
+      }
+
       if (this.textures.exists(key)) {
         this.textures.remove(key);
       }
