@@ -21,11 +21,6 @@ import i18next from "i18next";
 
 /** Class representing the settings UI handler for keyboards */
 export class SettingsKeyboardUiHandler extends BaseControlSettingsUiHandler {
-  /**
-   * Creates an instance of SettingsKeyboardUiHandler.
-   *
-   * @param mode - The UI mode, optional.
-   */
   constructor(mode: UiMode | null = null) {
     super(mode);
     this.titleSelected = "Keyboard";
@@ -47,9 +42,6 @@ export class SettingsKeyboardUiHandler extends BaseControlSettingsUiHandler {
 
   setSetting = setSettingKeyboard;
 
-  /**
-   * Setup UI elements.
-   */
   setup() {
     super.setup();
     // If no gamepads are detected, set up a default UI prompt in the settings container.

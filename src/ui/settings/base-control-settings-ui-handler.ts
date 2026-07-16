@@ -5,6 +5,7 @@ import { TextStyle } from "#enums/text-style";
 import type { UiMode } from "#enums/ui-mode";
 import { getIconWithSettingName } from "#inputs/config-handler";
 import type { CustomInterfaceConfig, InterfaceConfig, MappingSettingName } from "#types/configs/inputs";
+import type { InputsIcons, LayoutConfig } from "#types/ui-types";
 import { NavigationManager, NavigationMenu } from "#ui/navigation-menu";
 import { ScrollBar } from "#ui/scroll-bar";
 import { specialIconKeys, specialIcons } from "#ui/special-icons";
@@ -14,20 +15,6 @@ import { addWindow } from "#ui/ui-theme";
 import { toCamelCase } from "#utils/strings";
 import i18next from "i18next";
 
-// TODO: Strongly type the index signature aside from simply being `string`
-export interface InputsIcons {
-  [key: string]: Phaser.GameObjects.Sprite;
-}
-
-export interface LayoutConfig {
-  optionsContainer: Phaser.GameObjects.Container;
-  inputsIcons: InputsIcons;
-  settingLabels: Phaser.GameObjects.Text[];
-  optionValueLabels: Phaser.GameObjects.Text[][];
-  optionCursors: number[];
-  keys: string[];
-  bindingSettings: string[];
-}
 /**
  * Abstract class for handling UI elements related to control settings.
  */
@@ -432,6 +419,8 @@ export abstract class BaseControlSettingsUiHandler extends UiHandler {
       // Return false indicating the layout application was not successful due to lack of gamepad.
       return false;
     }
+    const noGamepads = this.layout["noGamepads"];
+    noGamepads?.optionsContainer?.setVisible(false);
     // Extract the type of the gamepad from the active configuration.
     const configType = activeConfig.padType;
 

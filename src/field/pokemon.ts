@@ -74,7 +74,7 @@ import { BattlerIndex } from "#enums/battler-index";
 import { BattlerTagLapseType } from "#enums/battler-tag-lapse-type";
 import { BattlerTagType } from "#enums/battler-tag-type";
 import type { BerryType } from "#enums/berry-type";
-import { BiomeId } from "#enums/biome-id";
+import type { BiomeId } from "#enums/biome-id";
 import { ChallengeType } from "#enums/challenge-type";
 import { Challenges } from "#enums/challenges";
 import { DexAttr } from "#enums/dex-attr";
@@ -179,7 +179,7 @@ import {
 import { calculateBossSegmentDamage } from "#utils/damage";
 import { getEnumValues } from "#utils/enums";
 import { cachedFetch } from "#utils/fetch-utils";
-import { decodeNickname, getFusedSpeciesName, getPokemonSpecies } from "#utils/pokemon-utils";
+import { decodeNickname, getFusedSpeciesName } from "#utils/pokemon-utils";
 import { weightedPick } from "#utils/random";
 import { inSpeedOrder } from "#utils/speed-order-generator";
 import { ValueHolder } from "#utils/value-holder";
@@ -379,7 +379,7 @@ export abstract class Pokemon extends Phaser.GameObjects.Container {
         dataSource.fusionSpecies instanceof PokemonSpecies
           ? dataSource.fusionSpecies
           : dataSource.fusionSpecies
-            ? getPokemonSpecies(dataSource.fusionSpecies)
+            ? speciesDataRegistry.getSpecies(dataSource.fusionSpecies)
             : null;
       this.fusionFormIndex = dataSource.fusionFormIndex;
       this.fusionAbilityIndex = dataSource.fusionAbilityIndex;
@@ -1084,7 +1084,9 @@ export abstract class Pokemon extends Phaser.GameObjects.Container {
     }
 
     const species: PokemonSpecies =
-      useIllusion && this.summonData.illusion ? getPokemonSpecies(this.summonData.illusion.species) : this.species;
+      useIllusion && this.summonData.illusion
+        ? speciesDataRegistry.getSpecies(this.summonData.illusion.species)
+        : this.species;
     const formIndex = useIllusion && this.summonData.illusion ? this.summonData.illusion.formIndex : this.formIndex;
 
     if (species.forms && species.forms.length > 0) {
@@ -2861,11 +2863,6 @@ export abstract class Pokemon extends Phaser.GameObjects.Container {
    * @returns true if the Pokemon has been set as a shiny, false otherwise
    */
   trySetShiny(thresholdOverride?: number): boolean {
-    // Shiny Pokemon should not spawn in the end biome in endless
-    if (globalScene.gameMode.isEndless && globalScene.arena.biomeId === BiomeId.END) {
-      return false;
-    }
-
     const rand1 = (this.id & 0xffff0000) >>> 16;
     const rand2 = this.id & 0x0000ffff;
 
@@ -3039,9 +3036,9 @@ export abstract class Pokemon extends Phaser.GameObjects.Container {
     let fusionOverride: PokemonSpecies | undefined;
 
     if (forStarter && this.isPlayer() && activeOverrides.STARTER_FUSION_SPECIES_OVERRIDE) {
-      fusionOverride = getPokemonSpecies(activeOverrides.STARTER_FUSION_SPECIES_OVERRIDE);
+      fusionOverride = speciesDataRegistry.getSpecies(activeOverrides.STARTER_FUSION_SPECIES_OVERRIDE);
     } else if (this.isEnemy() && activeOverrides.ENEMY_FUSION_SPECIES_OVERRIDE) {
-      fusionOverride = getPokemonSpecies(activeOverrides.ENEMY_FUSION_SPECIES_OVERRIDE);
+      fusionOverride = speciesDataRegistry.getSpecies(activeOverrides.ENEMY_FUSION_SPECIES_OVERRIDE);
     }
 
     this.fusionSpecies =
@@ -5705,7 +5702,7 @@ export abstract class Pokemon extends Phaser.GameObjects.Container {
    */
   private hasSameAbilityInRootForm(abilityIndex: number): boolean {
     const currentAbilityIndex = this.abilityIndex;
-    const rootForm = getPokemonSpecies(this.species.getRootSpeciesId());
+    const rootForm = speciesDataRegistry.getSpecies(this.species.getRootSpeciesId());
     return rootForm.getAbility(abilityIndex) === rootForm.getAbility(currentAbilityIndex);
   }
 
@@ -5988,7 +5985,7 @@ export class PlayerPokemon extends Pokemon {
       return new Promise(resolve => resolve(this));
     }
     return new Promise(resolve => {
-      const evolutionSpecies = getPokemonSpecies(evolution.speciesId);
+      const evolutionSpecies = speciesDataRegistry.getSpecies(evolution.speciesId);
       const isFusion = evolution instanceof FusionSpeciesFormEvolution;
       let ret: PlayerPokemon;
       if (isFusion) {
@@ -6051,9 +6048,9 @@ export class PlayerPokemon extends Pokemon {
       this.handleSpecialEvolutions(evolution);
       const isFusion = evolution instanceof FusionSpeciesFormEvolution;
       if (isFusion) {
-        this.fusionSpecies = getPokemonSpecies(evolution.speciesId);
+        this.fusionSpecies = speciesDataRegistry.getSpecies(evolution.speciesId);
       } else {
-        this.species = getPokemonSpecies(evolution.speciesId);
+        this.species = speciesDataRegistry.getSpecies(evolution.speciesId);
       }
       if (evolution.preFormKey !== null) {
         const formIndex = Math.max(
