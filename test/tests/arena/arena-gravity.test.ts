@@ -1,0 +1,77 @@
+import { allMoves } from "#data/data-lists";
+import { AbilityId } from "#enums/ability-id";
+import { ArenaTagSide } from "#enums/arena-tag-side";
+import { ArenaTagType } from "#enums/arena-tag-type";
+import { BattlerIndex } from "#enums/battler-index";
+import { MoveId } from "#enums/move-id";
+import { SpeciesId } from "#enums/species-id";
+import { GameManager } from "#test/framework/game-manager";
+import Phaser from "phaser";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
+describe("Arena - Gravity", () => {
+  let phaserGame: Phaser.Game;
+  let game: GameManager;
+
+  beforeAll(() => {
+    phaserGame = new Phaser.Game({
+      type: Phaser.HEADLESS,
+    });
+  });
+
+  beforeEach(() => {
+    game = new GameManager(phaserGame);
+    game.override
+      .battleStyle("single")
+      .ability(AbilityId.UNNERVE)
+      .enemyAbility(AbilityId.BALL_FETCH)
+      .enemySpecies(SpeciesId.FLETCHLING)
+      .enemyLevel(5);
+  });
+
+  // Reference: https://bulbapedia.bulbagarden.net/wiki/Gravity_(move)
+
+  it("should multiply all non-OHKO move accuracy by 1.67x", async () => {
+    await game.classicMode.startBattle(SpeciesId.FEEBAS);
+
+    const accSpy = vi.spyOn(allMoves[MoveId.TACKLE], "calculateBattleAccuracy");
+
+    game.move.use(MoveId.GRAVITY);
+    game.setTurnOrder([BattlerIndex.PLAYER, BattlerIndex.ENEMY]);
+    await game.move.forceEnemyMove(MoveId.TACKLE);
+    await game.toEndOfTurn();
+
+    expect(game).toHaveArenaTag({ tagType: ArenaTagType.GRAVITY, side: ArenaTagSide.BOTH, turnCount: 4 });
+    expect(accSpy).toHaveLastReturnedWith(allMoves[MoveId.TACKLE].accuracy * 1.67);
+  });
+
+  it("should not affect OHKO move accuracy", async () => {
+    await game.classicMode.startBattle(SpeciesId.FEEBAS);
+
+    const accSpy = vi.spyOn(allMoves[MoveId.FISSURE], "calculateBattleAccuracy");
+    game.move.use(MoveId.GRAVITY);
+    game.setTurnOrder([BattlerIndex.PLAYER, BattlerIndex.ENEMY]);
+    await game.move.forceEnemyMove(MoveId.FISSURE);
+    await game.toEndOfTurn();
+
+    expect(game).toHaveArenaTag(ArenaTagType.GRAVITY);
+    expect(accSpy).toHaveLastReturnedWith(allMoves[MoveId.FISSURE].accuracy);
+  });
+
+  it("should forcibly ground all Pokemon for the duration of the effect", async () => {
+    await game.classicMode.startBattle(SpeciesId.FEEBAS);
+
+    const player = game.field.getPlayerPokemon();
+    const fletchling = game.field.getEnemyPokemon();
+    expect(player.isGrounded()).toBe(true);
+    expect(fletchling.isGrounded()).toBe(false);
+
+    game.move.use(MoveId.GRAVITY);
+    await game.toEndOfTurn();
+
+    expect(game).toHaveArenaTag(ArenaTagType.GRAVITY);
+    expect(player.isGrounded()).toBe(true);
+    expect(fletchling.isGrounded()).toBe(true);
+    expect(fletchling["isForciblyGrounded"]()).toBe(true);
+  });
+});

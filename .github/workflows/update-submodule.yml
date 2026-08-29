@@ -1,0 +1,203 @@
+name: Update Submodules
+
+on:
+  workflow_run:
+    workflows: ["Detect Labels"]
+    types: [completed]
+
+env:
+  GH_TOKEN: ${{ github.token }}
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  read-label-data:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # 7.0.0
+        with:
+          submodules: false
+          sparse-checkout: |
+            pnpm-lock.yaml
+            .nvmrc
+            .github/scripts/update-submodule/download-artifact.mts
+            .github/scripts/update-submodule/read-label-data.mts
+          sparse-checkout-cone-mode: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+        with:
+          version: 10
+
+      - name: Set up Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: Install Node.js dependencies
+        run: pnpm add @actions/core @actions/github
+
+      - name: Download artifact
+        run: node .github/scripts/update-submodule/download-artifact.mts
+        env:
+          INPUT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_RUNNER_TEMP: ${{ runner.temp }}
+
+      - name: Unzip artifact
+        run: unzip "${{ runner.temp }}/artifacts/pr-data.zip" -d "${{ runner.temp }}/artifacts"
+
+      - name: Read label data
+        id: read-label-data
+        run: node .github/scripts/update-submodule/read-label-data.mts
+        env:
+          INPUT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_RUNNER_TEMP: ${{ runner.temp }}
+
+    outputs:
+      label: ${{ steps.read-label-data.outputs.label }}
+      prNumber: ${{ steps.read-label-data.outputs.prNumber }}
+      ref: ${{ steps.read-label-data.outputs.ref }}
+      repo: ${{ steps.read-label-data.outputs.repo }}
+
+  block-locales-pr:
+    needs: read-label-data
+    if: needs.read-label-data.outputs.label == 'Awaiting Locales'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # 7.0.0
+        with:
+          sparse-checkout: |
+            .nvmrc
+          sparse-checkout-cone-mode: false
+
+      - name: "Block PR"
+        run: |
+          gh pr review ${{ needs.read-label-data.outputs.prNumber }} -R ${{ github.repository }} --request-changes --body "This pull request is blocked until the associated locales PR is merged.
+          To unblock and update the locales submodule, add the \`Update Locales\` label."
+
+  block-assets-pr:
+    needs: read-label-data
+    if: needs.read-label-data.outputs.label == 'Awaiting Assets'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # 7.0.0
+        with:
+          sparse-checkout: |
+            .nvmrc
+          sparse-checkout-cone-mode: false
+
+      - name: "Block PR"
+        run: |
+          gh pr review ${{ needs.read-label-data.outputs.prNumber }} -R ${{ github.repository }} --request-changes --body "This pull request is blocked until the associated assets PR is merged.
+          To unblock and update the assets submodule, add the \`Update Assets\` label."
+
+  update-locales:
+    needs: read-label-data
+    if: needs.read-label-data.outputs.label == 'Update Locales'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app-token
+        with:
+          app-id: ${{ secrets.PAGEFAULT_APP_ID }}
+          private-key: ${{ secrets.PAGEFAULT_APP_PRIVATE_KEY }}
+
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # 7.0.0
+        with:
+          allow-unsafe-pr-checkout: true
+          repository: ${{ needs.read-label-data.outputs.repo }}
+          ref: ${{ needs.read-label-data.outputs.ref }}
+          sparse-checkout: |
+            locales
+            .gitmodules
+          sparse-checkout-cone-mode: false
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Update locales submodule
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git submodule update --progress --init --recursive --force --depth 1 --remote locales
+
+      - name: Commit and push changes
+        run: |
+          git add locales
+          if ! git commit -m "Update locales submodule"; then
+              echo "No changes to commit"
+          else
+              git push
+          fi
+
+      - name: Remove label
+        run: |
+          gh pr edit ${{ needs.read-label-data.outputs.prNumber }} -R ${{ github.repository }} --remove-label "Update Locales"
+          gh pr edit ${{ needs.read-label-data.outputs.prNumber }} -R ${{ github.repository }} --remove-label "Awaiting Locales"
+
+      - name: Unblock PR
+        run: |
+          REVIEW_ID=$(gh api repos/${{ github.repository }}/pulls/${{ needs.read-label-data.outputs.prNumber }}/reviews \
+              --jq '.[] | select(.user.login == "github-actions[bot]" and .state == "CHANGES_REQUESTED" and (.body // "" | contains("Update Locales"))) | .id' | head -n 1)
+          if [ -n "$REVIEW_ID" ]; then
+              gh api --method PUT repos/${{ github.repository }}/pulls/${{ needs.read-label-data.outputs.prNumber }}/reviews/$REVIEW_ID/dismissals \
+              -f message="Locales updated, unblocking PR."
+          fi
+
+  update-assets:
+    needs: read-label-data
+    if: needs.read-label-data.outputs.label == 'Update Assets'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app-token
+        with:
+          app-id: ${{ secrets.PAGEFAULT_APP_ID }}
+          private-key: ${{ secrets.PAGEFAULT_APP_PRIVATE_KEY }}
+
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # 7.0.0
+        with:
+          allow-unsafe-pr-checkout: true
+          repository: ${{ needs.read-label-data.outputs.repo }}
+          ref: ${{ needs.read-label-data.outputs.ref }}
+          sparse-checkout: |
+            assets
+            .gitmodules
+          sparse-checkout-cone-mode: false
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Update assets submodule
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git submodule update --progress --init --recursive --force --depth 1 --remote assets
+
+      - name: Commit and push changes
+        run: |
+          git add assets
+          if ! git commit -m "Update assets submodule"; then
+              echo "No changes to commit"
+          else
+              git push
+          fi
+
+      - name: Remove label
+        run: |
+          gh pr edit ${{ needs.read-label-data.outputs.prNumber }} -R ${{ github.repository }} --remove-label "Update Assets"
+          gh pr edit ${{ needs.read-label-data.outputs.prNumber }} -R ${{ github.repository }} --remove-label "Awaiting Assets"
+
+      - name: Unblock PR
+        run: |
+          REVIEW_ID=$(gh api repos/${{ github.repository }}/pulls/${{ needs.read-label-data.outputs.prNumber }}/reviews \
+              --jq '.[] | select(.user.login == "github-actions[bot]" and .state == "CHANGES_REQUESTED" and (.body // "" | contains("Update Assets"))) | .id' | head -n 1)
+          if [ -n "$REVIEW_ID" ]; then
+              gh api --method PUT repos/${{ github.repository }}/pulls/${{ needs.read-label-data.outputs.prNumber }}/reviews/$REVIEW_ID/dismissals \
+              -f message="Assets updated, unblocking PR."
+          fi

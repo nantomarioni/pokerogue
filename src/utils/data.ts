@@ -1,0 +1,137 @@
+import { loggedInUser } from "#app/account";
+import { saveKey } from "#app/constants";
+import { GameDataType } from "#enums/game-data-type";
+import type { AllStarterPreferences } from "#types/save-data";
+import { AES, enc } from "crypto-js";
+
+/**
+ * Perform a deep copy of an object.
+ * @param values - The object to be deep copied.
+ * @returns A new object that is a deep copy of the input.
+ */
+export function deepCopy<T extends object>(values: T): T {
+  // Convert the object to a JSON string and parse it back to an object to perform a deep copy
+  return JSON.parse(JSON.stringify(values));
+}
+
+/**
+ * Deeply merge two JSON objects' common properties together.
+ * This copies all values from `source` that match properties inside `dest`,
+ * checking recursively for non-null nested objects.
+
+ * If a property in `source` does not exist in `dest` or its `typeof` evaluates differently, it is skipped.
+ * If it is a non-array object, its properties are recursed into and checked in turn.
+ * All other values are copied verbatim.
+ * @param dest - The object to merge values into
+ * @param source - The object to source merged values from
+ * @remarks Do not use for regular objects; this is specifically made for JSON copying.
+ */
+export function deepMergeSpriteData(dest: object, source: object) {
+  for (const key of Object.keys(source)) {
+    if (
+      !(key in dest)
+      || typeof source[key] !== typeof dest[key]
+      || Array.isArray(source[key]) !== Array.isArray(dest[key])
+    ) {
+      continue;
+    }
+
+    // Pure objects get recursed into; everything else gets overwritten
+    if (typeof source[key] !== "object" || source[key] === null || Array.isArray(source[key])) {
+      dest[key] = source[key];
+    } else {
+      deepMergeSpriteData(dest[key], source[key]);
+    }
+  }
+}
+
+export function encrypt(data: string, bypassLogin: boolean): string {
+  if (bypassLogin) {
+    return btoa(encodeURIComponent(data));
+  }
+  return AES.encrypt(data, saveKey).toString();
+}
+
+export function decrypt(data: string, bypassLogin: boolean): string {
+  if (bypassLogin) {
+    return decodeURIComponent(atob(data));
+  }
+  return AES.decrypt(data, saveKey).toString(enc.Utf8);
+}
+
+/**
+ * Check if an object has no properties of its own (its shape is `{}`). An empty array is considered a bare object.
+ * @param obj - Object to check
+ * @returns - Whether the object is bare
+ */
+export function isBareObject(obj: any): boolean {
+  if (typeof obj !== "object") {
+    return false;
+  }
+  // biome-ignore lint/suspicious/useGuardForIn: Checking a bare object should include prototype chain
+  for (const _ in obj) {
+    return false;
+  }
+  return true;
+}
+
+// The latest data saved/loaded for the Starter Preferences. Required to reduce read/writes.
+// Initialized as "{}", since this is the default value and no data needs to be stored if present.
+const DEFAULT_STARTER_PREFS = "{}";
+let savedStarterPrefs: string = DEFAULT_STARTER_PREFS;
+
+export function loadStarterPreferences(): AllStarterPreferences {
+  savedStarterPrefs = localStorage.getItem(`starterPrefs_${loggedInUser?.username}`) ?? DEFAULT_STARTER_PREFS;
+  return JSON.parse(savedStarterPrefs);
+}
+
+export function saveStarterPreferences(prefs: AllStarterPreferences): void {
+  // Fastest way to check if an object has any properties (does no allocation)
+  if (isBareObject(prefs)) {
+    console.warn("Refusing to save empty starter preferences");
+    return;
+  }
+
+  // no reason to store `{}` (for starters not customized)
+  const pStr: string = JSON.stringify(prefs, (_, value) => (isBareObject(value) ? undefined : value));
+
+  if (pStr !== savedStarterPrefs) {
+    console.log("%cSaving starter preferences", "color: blue");
+    localStorage.setItem(`starterPrefs_${loggedInUser?.username}`, pStr);
+    savedStarterPrefs = pStr;
+  }
+}
+
+export function getDataTypeKey(dataType: GameDataType, slotId = 0): string {
+  switch (dataType) {
+    case GameDataType.SYSTEM:
+      return "data";
+    case GameDataType.SESSION: {
+      let ret = "sessionData";
+      if (slotId) {
+        ret += slotId;
+      }
+      return ret;
+    }
+    case GameDataType.SETTINGS:
+      return "settings";
+    case GameDataType.TUTORIALS:
+      return "tutorials";
+    case GameDataType.SEEN_DIALOGUES:
+      return "seenDialogues";
+    case GameDataType.RUN_HISTORY:
+      return "runHistoryData";
+    case GameDataType.MAPPING_CONFIG:
+      return "mappingConfigs";
+  }
+}
+
+/** @returns Whether the input is valid JSON */
+export function isValidJSON(str: string): boolean {
+  try {
+    JSON.parse(str);
+    return true;
+  } catch {
+    return false;
+  }
+}

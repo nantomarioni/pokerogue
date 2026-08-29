@@ -1,0 +1,31 @@
+name: Detect Labels
+
+on:
+    pull_request_target:
+        types: [labeled]
+        branches:
+            - main
+            - beta
+            - release
+            - "hotfix*"
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: false
+
+jobs:
+    upload-label-data:
+        if: github.event.label.name == 'Awaiting Locales' || github.event.label.name == 'Awaiting Assets' || github.event.label.name == 'Update Locales' || github.event.label.name == 'Update Assets'
+        runs-on: ubuntu-latest
+        steps:
+            - name: Save PR info
+              run: |
+                  mkdir -p ./pr
+                  echo ${{ github.event.number }} > ./pr/NR
+                  echo ${{ github.event.label.name }} > ./pr/LABEL
+                  echo ${{ github.event.pull_request.head.ref }} > ./pr/REF
+                  echo ${{ github.event.pull_request.head.repo.full_name }} > ./pr/REPO
+            - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+              with:
+                  name: pr-data
+                  path: pr/
