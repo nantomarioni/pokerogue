@@ -7,6 +7,7 @@ import { SETTINGS_UI_MODES } from "#constants/ui-constants";
 import { Button } from "#enums/buttons";
 import { GameSpeed } from "#enums/game-speed";
 import { UiMode } from "#enums/ui-mode";
+import { savestateManager } from "#system/savestate-manager";
 import { SettingsAudioUiHandler } from "#ui/audio-settings-ui-handler";
 import { GameChallengesUiHandler } from "#ui/challenges-select-ui-handler";
 import { SettingsDisplayUiHandler } from "#ui/display-settings-ui-handler";
@@ -102,6 +103,9 @@ export class UiInputs {
       [Button.CYCLE_TERA]: () => this.buttonCycleOption(Button.CYCLE_TERA),
       [Button.SPEED_UP]: () => this.buttonSpeedChange(),
       [Button.SLOW_DOWN]: () => this.buttonSpeedChange(false),
+      [Button.STATE_LOAD]: () => this.buttonSavestate(Button.STATE_LOAD),
+      [Button.STATE_PREV]: () => this.buttonSavestate(Button.STATE_PREV),
+      [Button.STATE_NEXT]: () => this.buttonSavestate(Button.STATE_NEXT),
       [Button.DEV_CUSTOM]: () => {
         if (isDev) {
           import("./dev-function").then(m => m.customDevFunction());
@@ -130,6 +134,9 @@ export class UiInputs {
       [Button.CYCLE_TERA]: () => this.buttonInfo(false),
       [Button.SPEED_UP]: () => {},
       [Button.SLOW_DOWN]: () => {},
+      [Button.STATE_LOAD]: () => {},
+      [Button.STATE_PREV]: () => {},
+      [Button.STATE_NEXT]: () => {},
       [Button.DEV_CUSTOM]: () => {},
     };
     return actions;
@@ -229,8 +236,65 @@ export class UiInputs {
     const uiHandler = globalScene.ui?.getHandler();
     if (whitelist.some(handler => uiHandler instanceof handler)) {
       globalScene.ui.processInput(button);
-    } else if (button === Button.CYCLE_TERA) {
+    } else if (!this.tryGamepadSavestateAlias(button) && button === Button.CYCLE_TERA) {
       this.buttonInfo(true);
+    }
+  }
+
+  /**
+   * Map dead-in-battle gamepad cycle buttons to savestate actions
+   * (LB -> previous state, RB -> next state, LT -> load last state).
+   * Keyboard input is unaffected (it has dedicated savestate keys).
+   * @returns Whether the button was handled as a savestate action
+   */
+  private tryGamepadSavestateAlias(button: Button): boolean {
+    if (globalScene.inputMethod !== "gamepad") {
+      return false;
+    }
+    switch (button) {
+      case Button.CYCLE_FORM:
+        this.buttonSavestate(Button.STATE_PREV);
+        return true;
+      case Button.CYCLE_SHINY:
+        this.buttonSavestate(Button.STATE_NEXT);
+        return true;
+      case Button.CYCLE_GENDER:
+        this.buttonSavestate(Button.STATE_LOAD);
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /** Handle savestate navigation, only while the game is waiting for input at a safe boundary. */
+  buttonSavestate(button: Button): void {
+    // Only act while a phase is blocked waiting for player input (no animations in flight)
+    const safeModes = [
+      UiMode.COMMAND,
+      UiMode.FIGHT,
+      UiMode.BALL,
+      UiMode.TARGET_SELECT,
+      UiMode.MODIFIER_SELECT,
+      UiMode.CONFIRM,
+    ];
+    if (!safeModes.includes(globalScene.ui?.getMode()) || savestateManager.restorePending) {
+      return;
+    }
+
+    let success = false;
+    switch (button) {
+      case Button.STATE_LOAD:
+        success = savestateManager.loadLast();
+        break;
+      case Button.STATE_PREV:
+        success = savestateManager.loadPrevious();
+        break;
+      case Button.STATE_NEXT:
+        success = savestateManager.loadNext();
+        break;
+    }
+    if (!success) {
+      globalScene.ui.playError();
     }
   }
 

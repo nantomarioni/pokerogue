@@ -26,6 +26,7 @@ import {
   TmModifierType,
 } from "#modifiers/modifier-type";
 import { BattlePhase } from "#phases/battle-phase";
+import { savestateManager } from "#system/savestate-manager";
 import type { ModifierSelectUiHandler } from "#ui/modifier-select-ui-handler";
 import { SHOP_OPTIONS_ROW_LIMIT } from "#ui/modifier-select-ui-handler";
 import { PartyOption, PartyUiHandler } from "#ui/party-ui-handler";
@@ -62,6 +63,18 @@ export class SelectModifierPhase extends BattlePhase {
 
     if (!this.isPlayer()) {
       return false;
+    }
+
+    // Savestate boundary: capture once per roll (initial + each reroll), before any
+    // RNG is consumed so the shop options can be regenerated identically on load.
+    // Skipped for copies (TM/Memory Mushroom re-entry) and custom reward screens.
+    if (!this.isCopy && !this.customModifierSettings) {
+      savestateManager.capture({
+        rerollCount: this.rerollCount,
+        modifierTiers: this.modifierTiers,
+        lockModifierTiers: globalScene.lockModifierTiers,
+        biomeSelectPending: globalScene.phaseManager.hasPhaseOfType("SelectBiomePhase"),
+      });
     }
 
     if (!this.rerollCount && !this.isCopy) {

@@ -11,6 +11,7 @@ import { MysteryEncounterMode } from "#enums/mystery-encounter-mode";
 import { TrainerSlot } from "#enums/trainer-slot";
 import type { Pokemon } from "#field/pokemon";
 import { PartyMemberPokemonPhase } from "#phases/party-member-pokemon-phase";
+import { savestateManager } from "#system/savestate-manager";
 import i18next from "i18next";
 
 export class SummonPhase extends PartyMemberPokemonPhase {
@@ -274,6 +275,11 @@ export class SummonPhase extends PartyMemberPokemonPhase {
     }
 
     pokemon.resetTurnData();
+
+    // Entry effects are already reflected in a savestate snapshot; re-applying them would double-apply
+    if (savestateManager.restorePending) {
+      return;
+    }
 
     if (
       !this.loaded

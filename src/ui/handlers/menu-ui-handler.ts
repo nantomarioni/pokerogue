@@ -9,6 +9,7 @@ import { Button } from "#enums/buttons";
 import { GameDataType } from "#enums/game-data-type";
 import { TextStyle } from "#enums/text-style";
 import { UiMode } from "#enums/ui-mode";
+import { savestateManager } from "#system/savestate-manager";
 import type { OptionSelectConfig, OptionSelectItem } from "#types/ui-types";
 import type { AwaitableUiHandler } from "#ui/awaitable-ui-handler";
 import { BgmBar } from "#ui/bgm-bar";
@@ -30,6 +31,9 @@ enum MenuOptions {
   POKEDEX,
   MANAGE_DATA,
   COMMUNITY,
+  SAVE_STATE,
+  LOAD_STATE,
+  RESTART_WAVE,
   SAVE_AND_QUIT,
   LOG_OUT,
 }
@@ -77,6 +81,10 @@ export class MenuUiHandler extends MessageUiHandler {
         options: [MenuOptions.EGG_GACHA, MenuOptions.EGG_LIST],
       },
       { condition: bypassLogin, options: [MenuOptions.LOG_OUT] },
+      {
+        condition: true,
+        options: [MenuOptions.SAVE_STATE, MenuOptions.LOAD_STATE, MenuOptions.RESTART_WAVE],
+      },
     ];
 
     this.menuOptions = getEnumValues(MenuOptions).filter(m => {
@@ -131,6 +139,15 @@ export class MenuUiHandler extends MessageUiHandler {
       },
       { condition: bypassLogin, options: [MenuOptions.LOG_OUT] },
       { condition: !globalScene.currentBattle, options: [MenuOptions.SAVE_AND_QUIT] },
+      {
+        condition: !globalScene.currentBattle || savestateManager.tip == null,
+        options: [MenuOptions.SAVE_STATE, MenuOptions.RESTART_WAVE],
+      },
+      {
+        condition:
+          !globalScene.currentBattle || (savestateManager.tip == null && savestateManager.peekManualSlot() == null),
+        options: [MenuOptions.LOAD_STATE],
+      },
     ];
 
     this.menuOptions = getEnumValues(MenuOptions).filter(m => {
@@ -667,6 +684,41 @@ export class MenuUiHandler extends MessageUiHandler {
           ui.setOverlayMode(UiMode.MENU_OPTION_SELECT, this.communityConfig);
           success = true;
           break;
+        case MenuOptions.SAVE_STATE: {
+          if (savestateManager.saveManualSlot()) {
+            success = true;
+            ui.showText(
+              i18next.t("menuUiHandler:savestateSaved", { defaultValue: "State saved." }),
+              null,
+              () => this.showText("", 0),
+              fixedInt(1000),
+            );
+          } else {
+            error = true;
+          }
+          break;
+        }
+        case MenuOptions.LOAD_STATE: {
+          // Prefer the persisted manual slot (survives page refreshes); fall back to
+          // the newest in-memory auto snapshot
+          ui.revertMode();
+          if (savestateManager.loadManualSlot() || savestateManager.loadLast()) {
+            success = true;
+          } else {
+            error = true;
+          }
+          break;
+        }
+        case MenuOptions.RESTART_WAVE: {
+          // The first snapshot of the wave is its turn-1 boundary
+          ui.revertMode();
+          if (savestateManager.loadIndex(0)) {
+            success = true;
+          } else {
+            error = true;
+          }
+          break;
+        }
         case MenuOptions.SAVE_AND_QUIT: {
           success = true;
           const doSaveQuit = () => {

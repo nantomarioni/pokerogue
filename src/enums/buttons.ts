@@ -17,4 +17,7 @@ export enum Button {
   SPEED_UP,
   SLOW_DOWN,
   DEV_CUSTOM,
+  STATE_LOAD,
+  STATE_PREV,
+  STATE_NEXT,
 }

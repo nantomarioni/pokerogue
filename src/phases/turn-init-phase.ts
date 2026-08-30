@@ -7,12 +7,17 @@ import {
   handleMysteryEncounterTurnStartEffects,
 } from "#mystery-encounters/encounter-phase-utils";
 import { FieldPhase } from "#phases/field-phase";
+import { savestateManager } from "#system/savestate-manager";
 import i18next from "i18next";
 
 export class TurnInitPhase extends FieldPhase {
   public readonly phaseName = "TurnInitPhase";
   start() {
     super.start();
+
+    // Savestate boundary: the phase queue is empty here, making this the safe point
+    // to snapshot the wave (or re-sync the cursor when re-entered via a restore)
+    savestateManager.capture();
 
     globalScene.getPlayerField().forEach(p => {
       // If this pokemon is in play and evolved into something illegal under the current challenge, force a switch
