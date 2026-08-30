@@ -6,8 +6,9 @@ import { UiMode } from "#enums/ui-mode";
 import type { SelectModifierPhase } from "#phases/select-modifier-phase";
 import { getSavestateLocalStorageKey, savestateManager } from "#system/savestate-manager";
 import { GameManager } from "#test/framework/game-manager";
+import { ModifierSelectUiHandler } from "#ui/modifier-select-ui-handler";
 import Phaser from "phaser";
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("Savestates", () => {
   let phaserGame: Phaser.Game;
@@ -155,6 +156,12 @@ describe("Savestates", () => {
     const initialOptions = initialPhase["typeOptions"].map(o => o.type.id);
     const moneyBeforeReroll = game.scene.money;
 
+    // Toggle "lock rarities" mid-screen: the R0 snapshot was captured with it OFF,
+    // so rolling back must restore OFF (and repaint the button accordingly)
+    expect(game.scene.lockModifierTiers).toBe(false);
+    initialPhase["toggleRerollLock"]();
+    expect(game.scene.lockModifierTiers).toBe(true);
+
     // Reroll: burns money, unshifts a new SelectModifierPhase(rerollCount + 1)
     expect(initialPhase["rerollModifiers"]()).toBe(true);
     await game.phaseInterceptor.to("SelectModifierPhase");
@@ -162,13 +169,24 @@ describe("Savestates", () => {
     expect(game.scene.money).toBeLessThan(moneyBeforeReroll);
     expect(savestateManager.states.filter(s => s.kind === "reward")).toHaveLength(2);
 
-    // Roll back the reroll: money refunded, regenerated options identical
+    // Roll back the reroll: money refunded, lock state restored + repainted,
+    // regenerated options identical
+    const modifierSelectHandler = game.scene.ui.handlers.find(
+      h => h instanceof ModifierSelectUiHandler,
+    ) as ModifierSelectUiHandler;
+    const repaintSpy = vi.spyOn(modifierSelectHandler, "updateLockRaritiesText");
     await loadAndResume(() => savestateManager.loadPrevious(), "SelectModifierPhase");
 
     expect(game.scene.money).toBe(moneyBeforeReroll);
+    expect(game.scene.lockModifierTiers).toBe(false);
+    expect(repaintSpy).toHaveBeenCalled();
     expect(game.scene.ui.getMode()).toBe(UiMode.MODIFIER_SELECT);
     const restoredPhase = game.scene.phaseManager.getCurrentPhase() as SelectModifierPhase;
     expect(restoredPhase["typeOptions"].map(o => o.type.id)).toEqual(initialOptions);
+
+    // Step forward again: the R1 snapshot was captured with the lock ON
+    await loadAndResume(() => savestateManager.loadNext(), "SelectModifierPhase");
+    expect(game.scene.lockModifierTiers).toBe(true);
   });
 
   it("should survive consecutive reward-screen rollbacks (reroll spam)", async () => {

@@ -206,6 +206,9 @@ export class ModifierSelectUiHandler extends AwaitableUiHandler {
     this.rerollCost = args[3] as number;
 
     this.updateRerollCostText();
+    // Repaint the lock-rarities toggle from the live flag: a savestate restore can
+    // change `lockModifierTiers` outside of `toggleRerollLock` (its only other painter)
+    this.updateLockRaritiesText();
 
     const typeOptions = args[1] as ModifierTypeOption[];
     const hasShop = globalScene.gameMode.getShopStatus();
