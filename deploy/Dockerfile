@@ -9,7 +9,8 @@
 FROM node:24 AS build
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml lefthook.yml ./
+COPY patches ./patches
 # The repo's postinstall runs lefthook + git config, which need a git repo
 RUN corepack enable && git init -q . && pnpm install --frozen-lockfile
 
