@@ -83,6 +83,12 @@ jobs:
 
           yq -i '.image.tag = "'"${NEW_TAG}"'"' values.yaml
 
+          # Idempotent: a re-run (or manual pin) may leave nothing to commit
+          if git diff --quiet; then
+            echo "Tag already at ${NEW_TAG}; nothing to deploy."
+            exit 0
+          fi
+
           git add values.yaml
           git commit -m "feat(${{ env.CODE_REPO }}): deploy version ${NEW_TAG}"
           git push
