@@ -7,6 +7,7 @@ import { UiMode } from "#enums/ui-mode";
 import { savestateManager } from "#system/savestate-manager";
 import { Setting, SettingKeys, settingIndex } from "#system/settings";
 import { SettingsAudioUiHandler } from "#ui/audio-settings-ui-handler";
+import { AwaitableUiHandler } from "#ui/awaitable-ui-handler";
 import { SettingsDisplayUiHandler } from "#ui/display-settings-ui-handler";
 import { SettingsGamepadUiHandler } from "#ui/gamepad-settings-ui-handler";
 import { SettingsKeyboardUiHandler } from "#ui/keyboard-settings-ui-handler";
@@ -23,6 +24,10 @@ type ActionKeys = Record<Button, () => void>;
 export class UiInputs {
   private events: Phaser.Events.EventEmitter;
   private inputsController: InputsController;
+  private savestateNavTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** How long after the last prev/next press the pending savestate navigation commits (ms). */
+  private static readonly SAVESTATE_NAV_COMMIT_DELAY_MS = 500;
 
   constructor(inputsController: InputsController) {
     this.inputsController = inputsController;
@@ -264,6 +269,41 @@ export class UiInputs {
 
   /** Handle savestate navigation, only while the game is waiting for input at a safe boundary. */
   buttonSavestate(button: Button): void {
+    if (!this.canTriggerSavestate()) {
+      return;
+    }
+
+    if (button === Button.STATE_LOAD) {
+      this.clearSavestateNavTimer();
+      savestateManager.cancelPreview();
+      if (!savestateManager.loadLast()) {
+        globalScene.ui.playError();
+      }
+      return;
+    }
+
+    // Prev/next only move a preview cursor; the actual (single) restore fires
+    // shortly after the last press, so stepping N states back costs one reload
+    const target = savestateManager.stepPreview(button === Button.STATE_PREV ? -1 : 1);
+    if (target == null) {
+      globalScene.ui.playError();
+      return;
+    }
+    // Each press resets the commit window, so you can keep stepping at a relaxed pace
+    this.clearSavestateNavTimer();
+    this.savestateNavTimer = setTimeout(() => {
+      this.savestateNavTimer = null;
+      // Conditions were checked at press time; re-check before committing
+      if (this.canTriggerSavestate()) {
+        savestateManager.commitPreview();
+      } else {
+        savestateManager.cancelPreview();
+      }
+    }, UiInputs.SAVESTATE_NAV_COMMIT_DELAY_MS);
+  }
+
+  /** @returns Whether a savestate action may run right now (input-ready safe boundary). */
+  private canTriggerSavestate(): boolean {
     // Only act while a phase is blocked waiting for player input (no animations in flight)
     const safeModes = [
       UiMode.COMMAND,
@@ -274,23 +314,18 @@ export class UiInputs {
       UiMode.CONFIRM,
     ];
     if (!safeModes.includes(globalScene.ui?.getMode()) || savestateManager.restorePending) {
-      return;
+      return false;
     }
+    // The mode is set when a screen *starts* animating in; wait until it accepts input,
+    // otherwise tearing it down mid-tween can crash Phaser's game loop
+    const handler = globalScene.ui?.getHandler();
+    return !(handler instanceof AwaitableUiHandler && !handler["awaitingActionInput"]);
+  }
 
-    let success = false;
-    switch (button) {
-      case Button.STATE_LOAD:
-        success = savestateManager.loadLast();
-        break;
-      case Button.STATE_PREV:
-        success = savestateManager.loadPrevious();
-        break;
-      case Button.STATE_NEXT:
-        success = savestateManager.loadNext();
-        break;
-    }
-    if (!success) {
-      globalScene.ui.playError();
+  private clearSavestateNavTimer(): void {
+    if (this.savestateNavTimer) {
+      clearTimeout(this.savestateNavTimer);
+      this.savestateNavTimer = null;
     }
   }
 

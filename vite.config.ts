@@ -83,6 +83,21 @@ export default defineConfig(async config => {
     publicDir: command === "serve" ? "assets" : false,
     server: {
       port: Number.isNaN(envPort) ? 8000 : envPort,
+      proxy: {
+        // Dev-only escape hatch to reach the real PokéRogue API from a local client:
+        // the API rejects requests without a pokerogue.net origin, so the dev server
+        // forwards them with the expected headers. Activated by setting
+        // VITE_SERVER_URL=http://localhost:8000/rogueapi (e.g. in .env.production.local).
+        "/rogueapi": {
+          target: "https://api.pokerogue.net",
+          changeOrigin: true,
+          rewrite: p => p.replace(/^\/rogueapi/, ""),
+          headers: {
+            origin: "https://pokerogue.net",
+            referer: "https://pokerogue.net/",
+          },
+        },
+      },
     },
   } satisfies UserConfig;
 });

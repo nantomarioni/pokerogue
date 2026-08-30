@@ -127,6 +127,9 @@ function snapshotPokemonTransients(pokemon: Pokemon): PokemonTransientSnapshot {
   };
 }
 
+/** Game speed applied while a restore's animations play (the native "Turbo" setting value). */
+const RESTORE_GAME_SPEED = 5;
+
 /**
  * Manages emulator-style savestates scoped to the current wave.
  *
@@ -158,6 +161,12 @@ export class SavestateManager {
   /** Listeners notified whenever the history/cursor changes (used by the HUD overlay). */
   public onChange: ((manager: SavestateManager, action: string) => void) | null = null;
 
+  /** Preview index while the player is stepping through states before the load commits. */
+  private navPreview: number | null = null;
+  /** Reverts the temporary restore-time game-speed boost (null when no boost is active). */
+  private revertSpeedBoost: (() => void) | null = null;
+  private revertSpeedBoostTimer: ReturnType<typeof setTimeout> | null = null;
+
   public get states(): readonly Savestate[] {
     return this.history;
   }
@@ -172,6 +181,48 @@ export class SavestateManager {
 
   public get tip(): Savestate | null {
     return this.history.at(-1) ?? null;
+  }
+
+  /** The pending navigation target while stepping through states, or `null` when none. */
+  public get preview(): number | null {
+    return this.navPreview;
+  }
+
+  /**
+   * Move the navigation preview one step without loading anything.
+   * Lets rapid presses coalesce into a single restore (committed via {@linkcode commitPreview}).
+   * @returns The new preview index, or `null` if the step is impossible
+   */
+  public stepPreview(direction: -1 | 1): number | null {
+    if (this.restorePending || this.history.length === 0) {
+      return null;
+    }
+    const target = (this.navPreview ?? this.cursor) + direction;
+    if (target < 0 || target > this.history.length - 1) {
+      return null;
+    }
+    this.navPreview = target;
+    this.notify("preview");
+    return target;
+  }
+
+  /** Commit the pending navigation preview, triggering at most one restore. */
+  public commitPreview(): boolean {
+    const target = this.navPreview;
+    this.navPreview = null;
+    if (target == null) {
+      return false;
+    }
+    if (target === this.cursor) {
+      // Stepped back and forth to the state the game is already in: nothing to load
+      this.notify("load");
+      return true;
+    }
+    return this.loadIndex(target);
+  }
+
+  public cancelPreview(): void {
+    this.navPreview = null;
   }
 
   private notify(action: string): void {
@@ -203,6 +254,8 @@ export class SavestateManager {
       // just point the cursor at the state that was loaded.
       const idx = this.history.indexOf(this.pendingCursorSync);
       this.pendingCursorSync = null;
+      // The target screen is settling: let its entrance animation finish boosted, then revert
+      this.scheduleSpeedBoostRevert(1200);
       if (idx >= 0) {
         this.cursor = idx;
         this.notify("load");
@@ -285,6 +338,7 @@ export class SavestateManager {
     this.history = [];
     this.cursor = -1;
     this.pendingCursorSync = null;
+    this.navPreview = null;
     this.notify("clear");
   }
 
@@ -399,7 +453,13 @@ export class SavestateManager {
   private beginRestore(state: Savestate): void {
     this.restoring = true;
     this.pendingCursorSync = state;
+    this.navPreview = null;
     this.notify("loading");
+
+    // Play the restore's animations at the game's native Turbo speed
+    // (reverted shortly after the target screen settles; failsafe below)
+    this.applySpeedBoost();
+    this.scheduleSpeedBoostRevert(5000);
 
     const phaseManager = globalScene.phaseManager;
     const interrupted = phaseManager.getCurrentPhase();
@@ -415,6 +475,54 @@ export class SavestateManager {
    */
   public finishRestore(): void {
     this.restoring = false;
+  }
+
+  /**
+   * Temporarily raise the game speed to Turbo while a restore's animations play.
+   * Uses the exact mechanism behind the official speed setting (see `initGameSpeed`),
+   * so timing-scaled behavior is identical to a player running at 5x.
+   */
+  private applySpeedBoost(): void {
+    if (this.revertSpeedBoost || globalScene.gameSpeed >= RESTORE_GAME_SPEED) {
+      return;
+    }
+    const originalSpeed = globalScene.gameSpeed;
+    globalScene.gameSpeed = RESTORE_GAME_SPEED;
+    this.revertSpeedBoost = () => {
+      // Don't clobber the setting if the player changed speed themselves in the meantime
+      if (globalScene.gameSpeed === RESTORE_GAME_SPEED) {
+        globalScene.gameSpeed = originalSpeed;
+      }
+      this.revertSpeedBoost = null;
+    };
+  }
+
+  /** (Re)schedule the speed-boost revert; wall-clock so it is unaffected by the boost itself. */
+  private scheduleSpeedBoostRevert(delayMs: number): void {
+    if (!this.revertSpeedBoost) {
+      return;
+    }
+    if (this.revertSpeedBoostTimer) {
+      clearTimeout(this.revertSpeedBoostTimer);
+    }
+    this.revertSpeedBoostTimer = setTimeout(() => {
+      this.revertSpeedBoostTimer = null;
+      this.revertSpeedBoost?.();
+    }, delayMs);
+  }
+
+  /**
+   * Drop any pending restore-time speed boost without reverting.
+   * Called when the player explicitly changes the game speed: their choice always wins
+   * over a stale revert (otherwise picking Turbo right after a boosted restore would be
+   * indistinguishable from the boost itself and get knocked back down).
+   */
+  public cancelSpeedBoost(): void {
+    if (this.revertSpeedBoostTimer) {
+      clearTimeout(this.revertSpeedBoostTimer);
+      this.revertSpeedBoostTimer = null;
+    }
+    this.revertSpeedBoost = null;
   }
 }
 

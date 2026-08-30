@@ -8,6 +8,7 @@ import { PlayerGender } from "#enums/player-gender";
 import { ShopCursorTarget } from "#enums/shop-cursor-target";
 import { UiMode } from "#enums/ui-mode";
 import { CandyUpgradeNotificationChangedEvent } from "#events/battle-scene";
+import { savestateManager } from "#system/savestate-manager";
 import { updateWindowType } from "#ui/ui-theme";
 import i18next from "i18next";
 import { languageOptions } from "./settings-language";
@@ -796,6 +797,8 @@ export function setSetting(setting: string, value: number): boolean {
   }
   switch (Setting[index].key) {
     case SettingKeys.Game_Speed:
+      // An explicit player choice must never be undone by a pending savestate speed-boost revert
+      savestateManager.cancelSpeedBoost();
       globalScene.gameSpeed = Number.parseFloat(Setting[index].options[value].value);
       break;
     case SettingKeys.Master_Volume:

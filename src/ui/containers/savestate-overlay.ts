@@ -62,13 +62,25 @@ export class SavestateOverlay extends Phaser.GameObjects.Container {
   }
 
   public showFor(manager: SavestateManager, action: string): void {
+    const previewIndex = manager.preview;
     const entries = manager.states.map((s, i) => {
       const label = SavestateOverlay.labelFor(s);
-      return i === manager.cursorIndex ? `[${label}]` : label;
+      if (i === previewIndex) {
+        return `>${label}<`;
+      }
+      return i === manager.cursorIndex && previewIndex == null ? `[${label}]` : label;
     });
 
     let title: string;
     switch (action) {
+      case "preview": {
+        const target = previewIndex == null ? null : manager.states[previewIndex];
+        title = i18next.t("savestate:preview", {
+          defaultValue: "Rewind to {{state}}…",
+          state: target ? SavestateOverlay.labelFor(target) : "?",
+        });
+        break;
+      }
       case "loading":
         title = i18next.t("savestate:loading", { defaultValue: "Loading state…" });
         break;

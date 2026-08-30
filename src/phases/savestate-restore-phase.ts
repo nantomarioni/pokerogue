@@ -92,10 +92,12 @@ export class SavestateRestorePhase extends Phase {
     globalScene["enemyModifierBar"].removeAll(true);
 
     for (const p of globalScene.getPlayerParty()) {
+      globalScene.tweens.killTweensOf(p);
       p.destroy();
     }
     for (const p of globalScene.getEnemyParty()) {
       try {
+        globalScene.tweens.killTweensOf(p);
         p.destroy();
       } catch {
         console.warn("Unable to destroy stale enemy pokemon during savestate restore");
@@ -105,7 +107,10 @@ export class SavestateRestorePhase extends Phase {
     if (battle?.mysteryEncounter?.introVisuals) {
       globalScene.field.remove(battle.mysteryEncounter.introVisuals, true);
     }
-    battle?.trainer?.destroy();
+    if (battle?.trainer) {
+      globalScene.tweens.killTweensOf(battle.trainer);
+      battle.trainer.destroy();
+    }
   }
 
   private doFinalize(): void {

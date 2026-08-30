@@ -171,6 +171,63 @@ describe("Savestates", () => {
     expect(restoredPhase["typeOptions"].map(o => o.type.id)).toEqual(initialOptions);
   });
 
+  it("should survive consecutive reward-screen rollbacks (reroll spam)", async () => {
+    game.override.enemyLevel(1);
+    await game.classicMode.startBattle(SpeciesId.FEEBAS);
+
+    game.scene.money = 1000000;
+    game.move.select(MoveId.TACKLE);
+    await game.doKillOpponents();
+    await game.phaseInterceptor.to("SelectModifierPhase");
+
+    // Reroll twice: history now holds R0, R1, R2
+    for (let i = 0; i < 2; i++) {
+      const phase = game.scene.phaseManager.getCurrentPhase() as SelectModifierPhase;
+      expect(phase["rerollModifiers"]()).toBe(true);
+      await game.phaseInterceptor.to("SelectModifierPhase");
+    }
+    expect(savestateManager.states.filter(s => s.kind === "reward")).toHaveLength(3);
+
+    // Roll back twice in a row: R2 -> R1 -> R0
+    await loadAndResume(() => savestateManager.loadPrevious(), "SelectModifierPhase");
+    expect((game.scene.phaseManager.getCurrentPhase() as SelectModifierPhase)["rerollCount"]).toBe(1);
+
+    await loadAndResume(() => savestateManager.loadPrevious(), "SelectModifierPhase");
+    expect((game.scene.phaseManager.getCurrentPhase() as SelectModifierPhase)["rerollCount"]).toBe(0);
+    expect(game.scene.ui.getMode()).toBe(UiMode.MODIFIER_SELECT);
+  }, 30000);
+
+  it("should coalesce multi-step navigation into a single restore", async () => {
+    await game.classicMode.startBattle(SpeciesId.FEEBAS);
+
+    game.move.select(MoveId.SPLASH);
+    await game.toNextTurn();
+    game.move.select(MoveId.SPLASH);
+    await game.toNextTurn();
+    expect(savestateManager.states).toHaveLength(3);
+
+    // Stepping the preview twice must not load anything yet
+    expect(savestateManager.stepPreview(-1)).toBe(1);
+    expect(savestateManager.stepPreview(-1)).toBe(0);
+    expect(savestateManager.restorePending).toBe(false);
+    expect(game.scene.currentBattle.turn).toBe(3);
+    // Preview cannot step past the wave's first state
+    expect(savestateManager.stepPreview(-1)).toBeNull();
+
+    // Committing fires exactly one restore, straight to turn 1
+    expect(savestateManager.commitPreview()).toBe(true);
+    expect(savestateManager.restorePending).toBe(true);
+    await game.phaseInterceptor.to("CommandPhase");
+    expect(game.scene.currentBattle.turn).toBe(1);
+    expect(savestateManager.cursorIndex).toBe(0);
+
+    // Stepping away and back to the current state commits without any reload
+    expect(savestateManager.stepPreview(1)).toBe(1);
+    expect(savestateManager.stepPreview(-1)).toBe(0);
+    expect(savestateManager.commitPreview()).toBe(true);
+    expect(savestateManager.restorePending).toBe(false);
+  });
+
   it("should persist the manual slot and reject snapshots from another run", async () => {
     await game.classicMode.startBattle(SpeciesId.FEEBAS);
 
