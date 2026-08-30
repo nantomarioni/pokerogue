@@ -41,6 +41,9 @@ export enum SettingKeyboard {
   ALT_BUTTON_SLOW_DOWN = "ALT_BUTTON_SLOW_DOWN",
   BUTTON_SUBMIT = "BUTTON_SUBMIT",
   ALT_BUTTON_SUBMIT = "ALT_BUTTON_SUBMIT",
+  BUTTON_STATE_LOAD = "BUTTON_STATE_LOAD",
+  BUTTON_STATE_PREV = "BUTTON_STATE_PREV",
+  BUTTON_STATE_NEXT = "BUTTON_STATE_NEXT",
   BUTTON_DEV_CUSTOM = "BUTTON_DEV_CUSTOM",
 }
 
@@ -82,6 +85,9 @@ export const settingKeyboardOptions = {
   [SettingKeyboard.BUTTON_SLOW_DOWN]: [`KEY ${Button.SLOW_DOWN.toString()}`, pressAction],
   [SettingKeyboard.ALT_BUTTON_SLOW_DOWN]: [`KEY ${Button.SLOW_DOWN.toString()}`, pressAction],
   [SettingKeyboard.ALT_BUTTON_SUBMIT]: [`KEY ${Button.SUBMIT.toString()}`, pressAction],
+  [SettingKeyboard.BUTTON_STATE_LOAD]: [`KEY ${Button.STATE_LOAD.toString()}`, pressAction],
+  [SettingKeyboard.BUTTON_STATE_PREV]: [`KEY ${Button.STATE_PREV.toString()}`, pressAction],
+  [SettingKeyboard.BUTTON_STATE_NEXT]: [`KEY ${Button.STATE_NEXT.toString()}`, pressAction],
   ...(isDev ? { [SettingKeyboard.BUTTON_DEV_CUSTOM]: [`KEY ${Button.DEV_CUSTOM.toString()}`, pressAction] } : {}),
 };
 
@@ -122,6 +128,9 @@ export const settingKeyboardDefaults = {
   [SettingKeyboard.BUTTON_SLOW_DOWN]: 0,
   [SettingKeyboard.ALT_BUTTON_SLOW_DOWN]: 0,
   [SettingKeyboard.ALT_BUTTON_SUBMIT]: 0,
+  [SettingKeyboard.BUTTON_STATE_LOAD]: 0,
+  [SettingKeyboard.BUTTON_STATE_PREV]: 0,
+  [SettingKeyboard.BUTTON_STATE_NEXT]: 0,
   ...(isDev ? { [SettingKeyboard.BUTTON_DEV_CUSTOM]: 0 } : {}),
 };
 
@@ -171,6 +180,9 @@ export function setSettingKeyboard(setting: SettingKeyboard, value: number): boo
     case SettingKeyboard.ALT_BUTTON_SPEED_UP:
     case SettingKeyboard.ALT_BUTTON_SLOW_DOWN:
     case SettingKeyboard.ALT_BUTTON_SUBMIT:
+    case SettingKeyboard.BUTTON_STATE_LOAD:
+    case SettingKeyboard.BUTTON_STATE_PREV:
+    case SettingKeyboard.BUTTON_STATE_NEXT:
     case SettingKeyboard.BUTTON_DEV_CUSTOM:
       if (value && globalScene.ui) {
         const cancelHandler = (success = false): boolean => {

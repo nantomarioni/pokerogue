@@ -34,6 +34,7 @@ import { doTrainerExclamation } from "#mystery-encounters/encounter-phase-utils"
 import { getGoldenBugNetSpecies } from "#mystery-encounters/encounter-pokemon-utils";
 import { BattlePhase } from "#phases/battle-phase";
 import { achvs } from "#system/achv";
+import { savestateManager } from "#system/savestate-manager";
 import { randSeedInt, randSeedItem } from "#utils/common";
 import i18next from "i18next";
 
@@ -141,7 +142,8 @@ export class EncounterPhase extends BattlePhase {
       const enemyPokemon = globalScene.getEnemyParty()[e];
       if (e < (battle.double ? 2 : 1)) {
         enemyPokemon.setX(-66 + enemyPokemon.getFieldPositionOffset()[0]);
-        enemyPokemon.fieldSetup(true);
+        // Keep the snapshot's summonData (stat stages etc.) intact during a savestate restore
+        enemyPokemon.fieldSetup(!savestateManager.restorePending);
       }
 
       if (!this.loaded) {
@@ -289,6 +291,11 @@ export class EncounterPhase extends BattlePhase {
 
       globalScene.ui.setMode(UiMode.MESSAGE).then(() => {
         if (this.loaded) {
+          // A vanilla session load restarts the wave from scratch: stale in-memory
+          // savestates from a previous session must not survive (restores excepted)
+          if (!savestateManager.restorePending) {
+            savestateManager.clear();
+          }
           this.doEncounter();
           globalScene.resetSeed();
         } else {
@@ -303,6 +310,10 @@ export class EncounterPhase extends BattlePhase {
               if (!success) {
                 return globalScene.reset(true);
               }
+              // The wave is now persisted by the vanilla save: older savestates must die
+              // so no state can ever be loaded from before the current wave's start
+              savestateManager.clear();
+              savestateManager.clearManualSlot();
               this.doEncounter();
               globalScene.resetSeed();
             });

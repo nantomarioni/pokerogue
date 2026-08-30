@@ -5,6 +5,7 @@ import { Device } from "#enums/devices";
 import { PlayerGender } from "#enums/player-gender";
 import { TextStyle } from "#enums/text-style";
 import { UiMode } from "#enums/ui-mode";
+import { registerSavestateI18nFallbacks, savestateManager } from "#system/savestate-manager";
 import { AchvBar } from "#ui/achv-bar";
 import { AchvsUiHandler } from "#ui/achvs-ui-handler";
 import { AlertModalUiHandler } from "#ui/alert-modal-ui-handler";
@@ -48,6 +49,7 @@ import { RenameFormUiHandler } from "#ui/rename-form-ui-handler";
 import { RunHistoryUiHandler } from "#ui/run-history-ui-handler";
 import { RunInfoUiHandler } from "#ui/run-info-ui-handler";
 import { SaveSlotSelectUiHandler } from "#ui/save-slot-select-ui-handler";
+import { SavestateOverlay } from "#ui/savestate-overlay";
 import { SavingIconContainer } from "#ui/saving-icon-handler";
 import { SettingsUiHandler } from "#ui/settings-ui-handler";
 import { StarterSelectUiHandler } from "#ui/starter-select-ui-handler";
@@ -119,6 +121,7 @@ export class UI extends Phaser.GameObjects.Container {
   public achvBar: AchvBar;
   public bgmBar: BgmBar;
   public savingIcon: SavingIconContainer;
+  public savestateOverlay: SavestateOverlay;
 
   private tooltipContainer: Phaser.GameObjects.Container;
   private tooltipBg: Phaser.GameObjects.NineSlice;
@@ -206,6 +209,13 @@ export class UI extends Phaser.GameObjects.Container {
     this.savingIcon.setup();
 
     globalScene.uiContainer.add(this.savingIcon);
+
+    this.savestateOverlay = new SavestateOverlay();
+    this.savestateOverlay.setup();
+    registerSavestateI18nFallbacks();
+    savestateManager.onChange = (manager, action) => this.savestateOverlay.onSavestateChange(manager, action);
+
+    globalScene.uiContainer.add(this.savestateOverlay);
   }
 
   private setupTooltip() {

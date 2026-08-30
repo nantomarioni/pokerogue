@@ -995,6 +995,16 @@ export class GameData {
     return true;
   }
 
+  /**
+   * Re-initialize the game from an in-memory {@linkcode SessionSaveData} snapshot
+   * without touching localStorage or the server.
+   * @remarks Used by the savestate system to restore mid-wave snapshots in-process.
+   * @param sessionData - The session snapshot to load
+   */
+  public async loadSessionFromData(sessionData: SessionSaveData): Promise<void> {
+    await this.initSessionFromData(sessionData);
+  }
+
   // TODO: This needs a giant refactor and overhaul
   private async initSessionFromData(fromSession: SessionSaveData): Promise<void> {
     if (isBeta || isDev) {
