@@ -1,9 +1,13 @@
+import { Button } from "#enums/buttons";
 import { MoveId } from "#enums/move-id";
 import { SpeciesId } from "#enums/species-id";
+import { UiMode } from "#enums/ui-mode";
 import type { SelectModifierPhase } from "#phases/select-modifier-phase";
 import { rewardOracle } from "#system/reward-oracle";
 import { buildWantedCatalog, getWantedItemKey, wantedItems } from "#system/wanted-items";
 import { GameManager } from "#test/framework/game-manager";
+import { BaseOptionSelectUiHandler } from "#ui/base-option-select-ui-handler";
+import { MenuUiHandler } from "#ui/menu-ui-handler";
 import Phaser from "phaser";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
@@ -127,6 +131,54 @@ describe("Reward oracle", () => {
     expect(result.trace).toHaveLength(0); // no reroll is affordable
     expect(result.truncated).toBe(false);
     expect(result.paths.get("__SENTINEL_NEVER_FOUND__")).toBeNull();
+  }, 30000);
+
+  it("should navigate the wanted-items checklist UI without freezing", async () => {
+    await game.classicMode.startBattle(SpeciesId.FEEBAS);
+    const ui = game.scene.ui;
+    const menuHandler = ui.handlers.find(h => h instanceof MenuUiHandler) as MenuUiHandler;
+
+    // Open the category list (as Manage Data -> Wanted Items does)
+    await ui.setOverlayMode(UiMode.MENU_OPTION_SELECT, menuHandler["buildWantedItemsCategoryConfig"]());
+    let handler = ui.getHandler() as BaseOptionSelectUiHandler;
+    expect(handler).toBeInstanceOf(BaseOptionSelectUiHandler);
+    const categoryCount = handler["config"]!.options.length;
+    expect(categoryCount).toBeGreaterThan(5);
+    // Every window must fit the screen: bottom-anchored above the message box
+    expect(handler["getWindowHeight"]()).toBeLessThanOrEqual(game.scene.scaledCanvas.height - 48);
+
+    // Scroll through the whole category list and back (crosses the scroll window edges)
+    for (let i = 0; i < categoryCount + 5; i++) {
+      handler.processInput(Button.DOWN);
+    }
+    for (let i = 0; i < categoryCount + 5; i++) {
+      handler.processInput(Button.UP);
+    }
+
+    // Enter the first category's checklist (pin the cursor: wrap-around may have moved it)
+    handler.setCursor(0);
+    handler.processInput(Button.ACTION);
+    handler = ui.getHandler() as BaseOptionSelectUiHandler;
+    const checklistOptions = handler["config"]!.options;
+    expect(checklistOptions.length).toBeGreaterThan(1);
+    expect(checklistOptions.length).toBeLessThanOrEqual(41); // paginated: no giant text objects
+    expect(handler["getWindowHeight"]()).toBeLessThanOrEqual(game.scene.scaledCanvas.height - 48);
+
+    // Toggle the first item on and off; the label must repaint in place
+    handler.setCursor(0);
+    expect(wantedItems.size).toBe(0);
+    handler.processInput(Button.ACTION);
+    expect(wantedItems.size).toBe(1);
+    expect(checklistOptions[0].label.startsWith("[x]")).toBe(true);
+    handler.processInput(Button.ACTION);
+    expect(wantedItems.size).toBe(0);
+    expect(checklistOptions[0].label.startsWith("[x]")).toBe(false);
+
+    // Scroll deep into the checklist and back out via the Back entry
+    for (let i = 0; i < 60; i++) {
+      handler.processInput(Button.DOWN);
+    }
+    expect(ui.getMode()).toBe(UiMode.MENU_OPTION_SELECT);
   }, 30000);
 
   it("should build a deduplicated catalog with specific TMs and berries", () => {

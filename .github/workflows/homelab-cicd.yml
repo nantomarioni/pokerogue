@@ -59,6 +59,7 @@ jobs:
           push: true
           build-args: |
             VITE_SERVER_URL=${{ env.VITE_SERVER_URL }}
+            VITE_COMMIT_HASH=${{ steps.vars.outputs.sha_short }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: runnumber=${{ github.run_id }}
           platforms: linux/amd64

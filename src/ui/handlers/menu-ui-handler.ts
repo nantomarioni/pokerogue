@@ -807,20 +807,32 @@ export class MenuUiHandler extends MessageUiHandler {
   /**
    * Top level of the "Wanted Items" config: one entry per catalog category,
    * each opening a scrollable checklist of that category's items.
+   * Large categories are paginated: the option-select renders ALL entries into one
+   * text object (for width), so a 200-row list would freeze the tab.
    */
   private buildWantedItemsCategoryConfig(): OptionSelectConfig {
     const ui = this.getUi();
-    const options: OptionSelectItem[] = [...buildWantedCatalogByCategory().entries()].map(([category, entries]) => {
-      const checkedCount = entries.filter(e => wantedItems.has(e.key)).length;
-      return {
-        label: checkedCount > 0 ? `${category} (${checkedCount})` : category,
-        handler: () => {
-          ui.revertMode();
-          ui.setOverlayMode(UiMode.MENU_OPTION_SELECT, this.buildWantedItemsChecklistConfig(entries));
-          return true;
-        },
-      };
-    });
+    const PAGE_SIZE = 40;
+    const options: OptionSelectItem[] = [];
+    for (const [category, entries] of buildWantedCatalogByCategory().entries()) {
+      const pageCount = Math.ceil(entries.length / PAGE_SIZE);
+      for (let page = 0; page < pageCount; page++) {
+        const pageEntries = entries.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+        const checkedCount = pageEntries.filter(e => wantedItems.has(e.key)).length;
+        const pageSuffix = pageCount > 1 ? ` ${page + 1}/${pageCount}` : "";
+        options.push({
+          label: `${category}${pageSuffix}${checkedCount > 0 ? ` (${checkedCount})` : ""}`,
+          // keepOpen: the handler must NOT self-clear after this returns — the checklist
+          // below reuses the same MENU_OPTION_SELECT handler and just set its config
+          keepOpen: true,
+          handler: () => {
+            ui.revertMode();
+            ui.setOverlayMode(UiMode.MENU_OPTION_SELECT, this.buildWantedItemsChecklistConfig(pageEntries));
+            return true;
+          },
+        });
+      }
+    }
     options.push({
       label: i18next.t("menuUiHandler:back", { defaultValue: "Back" }),
       handler: () => {
@@ -828,7 +840,8 @@ export class MenuUiHandler extends MessageUiHandler {
         return true;
       },
     });
-    return { options, maxOptions: 14, yOffset: 8 };
+    // Window is bottom-anchored above the message box: ~132px usable -> 8 rows max
+    return { options, maxOptions: 7 };
   }
 
   /** Scrollable checklist for one category; toggling repaints in place via keepOpen. */
@@ -854,13 +867,16 @@ export class MenuUiHandler extends MessageUiHandler {
     });
     options.push({
       label: i18next.t("menuUiHandler:back", { defaultValue: "Back" }),
+      // keepOpen: same-handler chaining, see the category entries
+      keepOpen: true,
       handler: () => {
         ui.revertMode();
         ui.setOverlayMode(UiMode.MENU_OPTION_SELECT, this.buildWantedItemsCategoryConfig());
         return true;
       },
     });
-    return { options, maxOptions: 14, yOffset: 8 };
+    // Window is bottom-anchored above the message box: ~132px usable -> 8 rows max
+    return { options, maxOptions: 7 };
   }
 
   clear() {

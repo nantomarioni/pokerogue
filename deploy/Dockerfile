@@ -19,6 +19,9 @@ COPY . .
 # Baked into the bundle: where the client reaches the (proxied) API
 ARG VITE_SERVER_URL=https://pokerogue.antomarioni.com/rogueapi
 ENV VITE_SERVER_URL=${VITE_SERVER_URL}
+# Short commit hash shown on the title screen so the running version is verifiable
+ARG VITE_COMMIT_HASH=
+ENV VITE_COMMIT_HASH=${VITE_COMMIT_HASH}
 
 RUN pnpm build
 

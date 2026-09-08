@@ -17,6 +17,8 @@ interface ImportMetaEnv {
   readonly VITE_DISCORD_CLIENT_ID?: string;
   readonly VITE_GOOGLE_CLIENT_ID?: string;
   readonly VITE_I18N_DEBUG?: "0" | "1";
+  /** Short commit hash injected at image build time (fork build indicator). */
+  readonly VITE_COMMIT_HASH?: string;
 }
 
 // tell vite to disallow missing env vars

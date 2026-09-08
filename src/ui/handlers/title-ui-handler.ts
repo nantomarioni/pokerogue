@@ -195,7 +195,10 @@ export class TitleUiHandler extends OptionSelectUiHandler {
     );
 
     const betaText = isBeta || isDev ? " (Beta)" : "";
-    this.appVersionText.setText("v" + version + betaText);
+    // Fork build indicator: commit hash injected at image build time (see deploy/Dockerfile),
+    // so the title screen always tells which code is actually running
+    const commitHash = import.meta.env.VITE_COMMIT_HASH ? ` [${import.meta.env.VITE_COMMIT_HASH}]` : "";
+    this.appVersionText.setText("v" + version + betaText + commitHash);
 
     const ui = this.getUi();
 
