@@ -26,6 +26,7 @@ import {
   TmModifierType,
 } from "#modifiers/modifier-type";
 import { BattlePhase } from "#phases/battle-phase";
+import { rewardOracle } from "#system/reward-oracle";
 import { savestateManager } from "#system/savestate-manager";
 import type { ModifierSelectUiHandler } from "#ui/modifier-select-ui-handler";
 import { SHOP_OPTIONS_ROW_LIMIT } from "#ui/modifier-select-ui-handler";
@@ -298,6 +299,8 @@ export class SelectModifierPhase extends BattlePhase {
         }
         audioManager.playSound("se/buy");
         (globalScene.ui.getHandler() as ModifierSelectUiHandler).updateCostText();
+        // Money/held items changed: reroll predictions may have shifted
+        this.recomputeRewardOracle();
       } else {
         globalScene.ui.playError();
       }
@@ -419,6 +422,18 @@ export class SelectModifierPhase extends BattlePhase {
       modifierSelectCallback,
       this.getRerollCost(globalScene.lockModifierTiers),
     );
+    this.recomputeRewardOracle();
+  }
+
+  /**
+   * Refresh the reward oracle's predictions from the current screen state.
+   * No-op for copies and custom reward screens (their options aren't pool rolls).
+   */
+  private recomputeRewardOracle(): void {
+    if (this.isCopy || this.customModifierSettings || !this.isPlayer()) {
+      return;
+    }
+    rewardOracle.recompute(this.typeOptions, this.rerollCount, this.getModifierCount());
   }
 
   updateSeed(): void {

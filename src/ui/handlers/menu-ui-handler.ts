@@ -10,8 +10,10 @@ import { GameDataType } from "#enums/game-data-type";
 import { TextStyle } from "#enums/text-style";
 import { UiMode } from "#enums/ui-mode";
 import { savestateManager } from "#system/savestate-manager";
+import { buildWantedCatalogByCategory, type WantedCatalogEntry, wantedItems } from "#system/wanted-items";
 import type { OptionSelectConfig, OptionSelectItem } from "#types/ui-types";
 import type { AwaitableUiHandler } from "#ui/awaitable-ui-handler";
+import { BaseOptionSelectUiHandler } from "#ui/base-option-select-ui-handler";
 import { BgmBar } from "#ui/bgm-bar";
 import { MessageUiHandler } from "#ui/message-ui-handler";
 import { addTextObject, getTextStyleOptions } from "#ui/text";
@@ -31,6 +33,7 @@ enum MenuOptions {
   POKEDEX,
   MANAGE_DATA,
   COMMUNITY,
+  WANTED_ITEMS,
   SAVE_STATE,
   LOAD_STATE,
   RESTART_WAVE,
@@ -661,6 +664,10 @@ export class MenuUiHandler extends MessageUiHandler {
           ui.setOverlayMode(UiMode.MENU_OPTION_SELECT, this.communityConfig);
           success = true;
           break;
+        case MenuOptions.WANTED_ITEMS:
+          ui.setOverlayMode(UiMode.MENU_OPTION_SELECT, this.buildWantedItemsCategoryConfig());
+          success = true;
+          break;
         case MenuOptions.SAVE_STATE: {
           if (savestateManager.saveManualSlot()) {
             success = true;
@@ -841,6 +848,65 @@ export class MenuUiHandler extends MessageUiHandler {
     this.cursorObj.setPositionRelative(this.menuBg, 7, 6 + (18 + this.cursor * 96) * this.scale);
 
     return ret;
+  }
+
+  /**
+   * Top level of the "Wanted Items" config: one entry per catalog category,
+   * each opening a scrollable checklist of that category's items.
+   */
+  private buildWantedItemsCategoryConfig(): OptionSelectConfig {
+    const ui = this.getUi();
+    const options: OptionSelectItem[] = [...buildWantedCatalogByCategory().entries()].map(([category, entries]) => {
+      const checkedCount = entries.filter(e => wantedItems.has(e.key)).length;
+      return {
+        label: checkedCount > 0 ? `${category} (${checkedCount})` : category,
+        handler: () => {
+          ui.revertMode();
+          ui.setOverlayMode(UiMode.MENU_OPTION_SELECT, this.buildWantedItemsChecklistConfig(entries));
+          return true;
+        },
+      };
+    });
+    options.push({
+      label: i18next.t("menuUiHandler:back", { defaultValue: "Back" }),
+      handler: () => {
+        ui.revertMode();
+        return true;
+      },
+    });
+    return { options, maxOptions: 14, yOffset: 8 };
+  }
+
+  /** Scrollable checklist for one category; toggling repaints in place via keepOpen. */
+  private buildWantedItemsChecklistConfig(entries: WantedCatalogEntry[]): OptionSelectConfig {
+    const ui = this.getUi();
+    const checkbox = (key: string) => (wantedItems.has(key) ? "[x] " : "[  ] ");
+    const options: OptionSelectItem[] = entries.map(entry => {
+      const item: OptionSelectItem = {
+        label: checkbox(entry.key) + entry.label,
+        keepOpen: true,
+        handler: () => {
+          wantedItems.toggle(entry.key);
+          // Repaint the open list in place
+          item.label = checkbox(entry.key) + entry.label;
+          const handler = ui.getHandler();
+          if (handler instanceof BaseOptionSelectUiHandler) {
+            handler["setupOptions"]();
+          }
+          return true;
+        },
+      };
+      return item;
+    });
+    options.push({
+      label: i18next.t("menuUiHandler:back", { defaultValue: "Back" }),
+      handler: () => {
+        ui.revertMode();
+        ui.setOverlayMode(UiMode.MENU_OPTION_SELECT, this.buildWantedItemsCategoryConfig());
+        return true;
+      },
+    });
+    return { options, maxOptions: 14, yOffset: 8 };
   }
 
   clear() {

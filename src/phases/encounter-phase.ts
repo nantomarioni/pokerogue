@@ -34,6 +34,7 @@ import { doTrainerExclamation } from "#mystery-encounters/encounter-phase-utils"
 import { getGoldenBugNetSpecies } from "#mystery-encounters/encounter-pokemon-utils";
 import { BattlePhase } from "#phases/battle-phase";
 import { achvs } from "#system/achv";
+import { rewardOracle } from "#system/reward-oracle";
 import { savestateManager } from "#system/savestate-manager";
 import { randSeedInt, randSeedItem } from "#utils/common";
 import i18next from "i18next";
@@ -56,6 +57,9 @@ export class EncounterPhase extends BattlePhase {
     globalScene.updateGameInfo();
 
     globalScene.initSession();
+
+    // Any new encounter means the reward screen (and its oracle predictions) is gone
+    rewardOracle.clear();
 
     globalScene.eventTarget.dispatchEvent(new EncounterPhaseEvent());
 

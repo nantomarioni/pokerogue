@@ -5,6 +5,7 @@ import { Device } from "#enums/devices";
 import { PlayerGender } from "#enums/player-gender";
 import { TextStyle } from "#enums/text-style";
 import { UiMode } from "#enums/ui-mode";
+import { rewardOracle } from "#system/reward-oracle";
 import { registerSavestateI18nFallbacks, savestateManager } from "#system/savestate-manager";
 import { AchvBar } from "#ui/achv-bar";
 import { AchvsUiHandler } from "#ui/achvs-ui-handler";
@@ -46,6 +47,7 @@ import { PokedexScanUiHandler } from "#ui/pokedex-scan-ui-handler";
 import { PokedexUiHandler } from "#ui/pokedex-ui-handler";
 import { RegistrationFormUiHandler } from "#ui/registration-form-ui-handler";
 import { RenameFormUiHandler } from "#ui/rename-form-ui-handler";
+import { RewardOracleOverlay } from "#ui/reward-oracle-overlay";
 import { RunHistoryUiHandler } from "#ui/run-history-ui-handler";
 import { RunInfoUiHandler } from "#ui/run-info-ui-handler";
 import { SaveSlotSelectUiHandler } from "#ui/save-slot-select-ui-handler";
@@ -122,6 +124,7 @@ export class UI extends Phaser.GameObjects.Container {
   public bgmBar: BgmBar;
   public savingIcon: SavingIconContainer;
   public savestateOverlay: SavestateOverlay;
+  public rewardOracleOverlay: RewardOracleOverlay;
 
   private tooltipContainer: Phaser.GameObjects.Container;
   private tooltipBg: Phaser.GameObjects.NineSlice;
@@ -216,6 +219,12 @@ export class UI extends Phaser.GameObjects.Container {
     savestateManager.onChange = (manager, action) => this.savestateOverlay.onSavestateChange(manager, action);
 
     globalScene.uiContainer.add(this.savestateOverlay);
+
+    this.rewardOracleOverlay = new RewardOracleOverlay();
+    this.rewardOracleOverlay.setup();
+    rewardOracle.onResults = oracle => this.rewardOracleOverlay.onOracleResults(oracle);
+
+    globalScene.uiContainer.add(this.rewardOracleOverlay);
   }
 
   private setupTooltip() {

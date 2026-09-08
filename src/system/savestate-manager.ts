@@ -95,6 +95,8 @@ export function registerSavestateI18nFallbacks(): void {
       saveState: "Save State",
       loadState: "Load State",
       restartWave: "Restart Wave",
+      wantedItems: "Wanted Items",
+      back: "Back",
     },
     true,
     false,
