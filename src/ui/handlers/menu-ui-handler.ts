@@ -9,7 +9,6 @@ import { Button } from "#enums/buttons";
 import { GameDataType } from "#enums/game-data-type";
 import { TextStyle } from "#enums/text-style";
 import { UiMode } from "#enums/ui-mode";
-import { savestateManager } from "#system/savestate-manager";
 import { buildWantedCatalogByCategory, type WantedCatalogEntry, wantedItems } from "#system/wanted-items";
 import type { OptionSelectConfig, OptionSelectItem } from "#types/ui-types";
 import type { AwaitableUiHandler } from "#ui/awaitable-ui-handler";
@@ -33,10 +32,6 @@ enum MenuOptions {
   POKEDEX,
   MANAGE_DATA,
   COMMUNITY,
-  WANTED_ITEMS,
-  SAVE_STATE,
-  LOAD_STATE,
-  RESTART_WAVE,
   SAVE_AND_QUIT,
   LOG_OUT,
 }
@@ -84,10 +79,6 @@ export class MenuUiHandler extends MessageUiHandler {
         options: [MenuOptions.EGG_GACHA, MenuOptions.EGG_LIST],
       },
       { condition: bypassLogin, options: [MenuOptions.LOG_OUT] },
-      {
-        condition: true,
-        options: [MenuOptions.SAVE_STATE, MenuOptions.LOAD_STATE, MenuOptions.RESTART_WAVE],
-      },
     ];
 
     this.menuOptions = getEnumValues(MenuOptions).filter(m => {
@@ -142,15 +133,6 @@ export class MenuUiHandler extends MessageUiHandler {
       },
       { condition: bypassLogin, options: [MenuOptions.LOG_OUT] },
       { condition: !globalScene.currentBattle, options: [MenuOptions.SAVE_AND_QUIT] },
-      {
-        condition: !globalScene.currentBattle || savestateManager.tip == null,
-        options: [MenuOptions.SAVE_STATE, MenuOptions.RESTART_WAVE],
-      },
-      {
-        condition:
-          !globalScene.currentBattle || (savestateManager.tip == null && savestateManager.peekManualSlot() == null),
-        options: [MenuOptions.LOAD_STATE],
-      },
     ];
 
     this.menuOptions = getEnumValues(MenuOptions).filter(m => {
@@ -258,6 +240,17 @@ export class MenuUiHandler extends MessageUiHandler {
         ui.setOverlayMode(UiMode.MENU_OPTION_SELECT, config);
       });
     };
+
+    // First entry of Manage Data: the reward-oracle wanted-items checklist
+    // (lives here because the pause menu itself is full — exactly 10 rows fit)
+    manageDataOptions.push({
+      label: i18next.t("menuUiHandler:wantedItems", { defaultValue: "Wanted Items" }),
+      handler: () => {
+        ui.revertMode();
+        ui.setOverlayMode(UiMode.MENU_OPTION_SELECT, this.buildWantedItemsCategoryConfig());
+        return true;
+      },
+    });
 
     if (isBeta || isDev || isApp) {
       manageDataOptions.push({
@@ -664,45 +657,6 @@ export class MenuUiHandler extends MessageUiHandler {
           ui.setOverlayMode(UiMode.MENU_OPTION_SELECT, this.communityConfig);
           success = true;
           break;
-        case MenuOptions.WANTED_ITEMS:
-          ui.setOverlayMode(UiMode.MENU_OPTION_SELECT, this.buildWantedItemsCategoryConfig());
-          success = true;
-          break;
-        case MenuOptions.SAVE_STATE: {
-          if (savestateManager.saveManualSlot()) {
-            success = true;
-            ui.showText(
-              i18next.t("menuUiHandler:savestateSaved", { defaultValue: "State saved." }),
-              null,
-              () => this.showText("", 0),
-              fixedInt(1000),
-            );
-          } else {
-            error = true;
-          }
-          break;
-        }
-        case MenuOptions.LOAD_STATE: {
-          // Prefer the persisted manual slot (survives page refreshes); fall back to
-          // the newest in-memory auto snapshot
-          ui.revertMode();
-          if (savestateManager.loadManualSlot() || savestateManager.loadLast()) {
-            success = true;
-          } else {
-            error = true;
-          }
-          break;
-        }
-        case MenuOptions.RESTART_WAVE: {
-          // The first snapshot of the wave is its turn-1 boundary
-          ui.revertMode();
-          if (savestateManager.loadIndex(0)) {
-            success = true;
-          } else {
-            error = true;
-          }
-          break;
-        }
         case MenuOptions.SAVE_AND_QUIT: {
           success = true;
           const doSaveQuit = () => {
