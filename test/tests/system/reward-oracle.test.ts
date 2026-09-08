@@ -138,10 +138,19 @@ describe("Reward oracle", () => {
     const ui = game.scene.ui;
     const menuHandler = ui.handlers.find(h => h instanceof MenuUiHandler) as MenuUiHandler;
 
-    // Open the category list (as Manage Data -> Wanted Items does)
-    await ui.setOverlayMode(UiMode.MENU_OPTION_SELECT, menuHandler["buildWantedItemsCategoryConfig"]());
+    // Enter through the REAL Manage Data submenu (its first entry is Wanted Items):
+    // chained configs reuse the handler, so every hop must survive the post-select clear()
+    menuHandler.render(); // builds manageDataConfig (normally runs when the menu opens)
+    await ui.setOverlayMode(UiMode.MENU_OPTION_SELECT, menuHandler["manageDataConfig"]);
     let handler = ui.getHandler() as BaseOptionSelectUiHandler;
     expect(handler).toBeInstanceOf(BaseOptionSelectUiHandler);
+    handler.setCursor(0);
+    handler.processInput(Button.ACTION);
+
+    // The category list must now be live and accepting input
+    handler = ui.getHandler() as BaseOptionSelectUiHandler;
+    expect(ui.getMode()).toBe(UiMode.MENU_OPTION_SELECT);
+    expect(handler["config"]).not.toBeNull();
     const categoryCount = handler["config"]!.options.length;
     expect(categoryCount).toBeGreaterThan(5);
     // Every window must fit the screen: bottom-anchored above the message box

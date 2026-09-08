@@ -242,9 +242,12 @@ export class MenuUiHandler extends MessageUiHandler {
     };
 
     // First entry of Manage Data: the reward-oracle wanted-items checklist
-    // (lives here because the pause menu itself is full — exactly 10 rows fit)
+    // (lives here because the pause menu itself is full — exactly 10 rows fit).
+    // keepOpen: this chains into another config on the same MENU_OPTION_SELECT
+    // handler; without it the post-select clear() wipes the new config (dead input)
     manageDataOptions.push({
       label: i18next.t("menuUiHandler:wantedItems", { defaultValue: "Wanted Items" }),
+      keepOpen: true,
       handler: () => {
         ui.revertMode();
         ui.setOverlayMode(UiMode.MENU_OPTION_SELECT, this.buildWantedItemsCategoryConfig());
