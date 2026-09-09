@@ -269,6 +269,8 @@ export class InputsController {
       }
       const config = deepCopy(this.getConfig(gamepadID)) as InterfaceConfig;
       config.custom = this.configs[gamepadID]?.custom || { ...config.default };
+      // Fork: covers the inject-then-setup order; see mergeMissingDefaultBindings
+      this.mergeMissingDefaultBindings(config);
       this.configs[gamepadID] = config;
       globalScene.gameData?.saveMappingConfigs(gamepadID, this.configs[gamepadID]);
     }
@@ -284,6 +286,8 @@ export class InputsController {
     for (const layout of ["default"]) {
       const config = deepCopy(this.getConfigKeyboard(layout)) as InterfaceConfig;
       config.custom = this.configs[layout]?.custom || { ...config.default };
+      // Fork: covers the inject-then-setup order; see mergeMissingDefaultBindings
+      this.mergeMissingDefaultBindings(config);
       this.configs[layout] = config;
       globalScene.gameData?.saveMappingConfigs(this.selectedDevice[Device.KEYBOARD], this.configs[layout]);
     }
@@ -571,6 +575,30 @@ export class InputsController {
       }
     }
     this.configs[selectedDevice].custom = mappingConfigs.custom;
+
+    // Fork: covers the setup-then-inject order; see mergeMissingDefaultBindings
+    this.mergeMissingDefaultBindings(this.configs[selectedDevice]);
+  }
+
+  /**
+   * Fork: adopt default bindings for actions introduced AFTER a saved mapping config
+   * was persisted (saved configs replace the defaults wholesale, so newly added
+   * buttons would stay dead forever). A setting absent from the custom map gets its
+   * default key — unless the player deliberately rebound that key to something else.
+   */
+  private mergeMissingDefaultBindings(config: InterfaceConfig | undefined): void {
+    if (!config?.default || !config.custom) {
+      return;
+    }
+    const boundSettings = new Set(Object.values(config.custom));
+    for (const [key, settingName] of Object.entries(config.default)) {
+      if (settingName === -1 || boundSettings.has(settingName)) {
+        continue;
+      }
+      if ((config.custom[key] ?? -1) === -1) {
+        config.custom[key] = settingName;
+      }
+    }
   }
 
   resetConfigs(): void {

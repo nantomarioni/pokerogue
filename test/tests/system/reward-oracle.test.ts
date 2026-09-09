@@ -2,6 +2,7 @@ import { Button } from "#enums/buttons";
 import { MoveId } from "#enums/move-id";
 import { SpeciesId } from "#enums/species-id";
 import { UiMode } from "#enums/ui-mode";
+import { CFG_KEYBOARD_QWERTY } from "#inputs/cfg-keyboard-qwerty";
 import type { SelectModifierPhase } from "#phases/select-modifier-phase";
 import { rewardOracle } from "#system/reward-oracle";
 import { buildWantedCatalog, getWantedItemKey, wantedItems } from "#system/wanted-items";
@@ -236,6 +237,24 @@ describe("Reward oracle", () => {
     expect(game.scene.money).toBe(moneyBefore - path.totalCost);
     expect(game.scene.gameSpeed).toBe(speedBefore); // override reverted
   }, 30000);
+
+  it("should adopt new default keybinds into stale saved mapping configs", async () => {
+    await game.classicMode.startBattle(SpeciesId.FEEBAS);
+    const controller = game.scene.inputController;
+    // Headless boot never runs setupKeyboard; seed the layout from the real config
+    (controller["configs"] as Record<string, unknown>)["default"] = structuredClone(CFG_KEYBOARD_QWERTY);
+
+    // Simulate a config saved by a build that predates AUTO_PATH: P unbound
+    controller.injectConfig("default", { custom: { ...CFG_KEYBOARD_QWERTY.default, KEY_P: -1 } } as never);
+    expect(controller["configs"]["default"].custom!["KEY_P"]).toBe("BUTTON_AUTO_PATH");
+
+    // A deliberate rebind of the action to another key must be preserved
+    controller.injectConfig("default", {
+      custom: { ...CFG_KEYBOARD_QWERTY.default, KEY_P: -1, KEY_U: "BUTTON_AUTO_PATH" },
+    } as never);
+    expect(controller["configs"]["default"].custom!["KEY_U"]).toBe("BUTTON_AUTO_PATH");
+    expect(controller["configs"]["default"].custom!["KEY_P"]).toBe(-1);
+  });
 
   it("should build a deduplicated catalog with specific TMs and berries", () => {
     const catalog = buildWantedCatalog();
