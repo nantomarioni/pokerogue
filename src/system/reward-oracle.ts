@@ -100,6 +100,12 @@ export class RewardOracle {
 
   /** The path currently being auto-executed, if any. */
   public plan: PlannedPath | null = null;
+  /**
+   * Set when a plan completes: the player is about to pick the found item and move on,
+   * so the overlay hides and recomputes stop (the common case needs no further searches).
+   * Reset by a savestate load, a plan abort, or the shop closing.
+   */
+  public suppressed = false;
   /** Reverts the automation speed override (null when none is active). */
   private revertAutomationSpeed: (() => void) | null = null;
 
@@ -158,14 +164,27 @@ export class RewardOracle {
     }
   }
 
-  /** Finish or abort the running plan, reverting the speed override. */
-  public endPlan(): void {
+  /**
+   * Finish or abort the running plan, reverting the speed override.
+   * @param completed - `true` when the plan arrived at its target: hides the overlay
+   * and suppresses further recomputes until a savestate load or the shop closes
+   */
+  public endPlan(completed = false): void {
     if (!this.plan) {
       return;
     }
     this.plan = null;
     this.revertAutomationSpeed?.();
+    if (completed) {
+      this.suppressed = true;
+      this.result = null;
+    }
     this.onResults?.(this);
+  }
+
+  /** Re-enable recomputes/overlay after a completed plan (savestate loads call this). */
+  public unsuppress(): void {
+    this.suppressed = false;
   }
 
   /** Drop the automation speed override without reverting (an explicit player speed change wins). */
@@ -271,6 +290,7 @@ export class RewardOracle {
   /** Drop stale results (called when a new encounter starts and the shop is gone). */
   public clear(): void {
     this.endPlan();
+    this.suppressed = false;
     if (this.result == null) {
       return;
     }

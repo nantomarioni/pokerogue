@@ -2,6 +2,7 @@ import type { FaintLogEntry } from "#app/battle";
 import { globalScene } from "#app/global-scene";
 import { Phase } from "#app/phase";
 import { UiMode } from "#enums/ui-mode";
+import { rewardOracle } from "#system/reward-oracle";
 import type { Savestate } from "#system/savestate-manager";
 import { savestateManager } from "#system/savestate-manager";
 
@@ -51,6 +52,10 @@ export class SavestateRestorePhase extends Phase {
 
     globalScene.ui.setMode(UiMode.MESSAGE);
     globalScene.ui.resetModeChain();
+
+    // A state load is the sanctioned way to re-enable the reward oracle after a
+    // completed auto-path suppressed it
+    rewardOracle.unsuppress();
 
     this.teardownLiveBattle();
 

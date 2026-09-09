@@ -457,11 +457,11 @@ export class SelectModifierPhase extends BattlePhase {
       this.recomputeRewardOracle();
       return;
     }
-    // Arrived: the wanted item is among the options on this screen
+    // Arrived: the wanted item is among the options on this screen. Hide the overlay
+    // and stop recomputing — the common flow is "pick it and move on"; a savestate
+    // load re-enables the oracle for anyone who wants to re-plan from here
     if (plan.stepIndex >= plan.lockPath.length) {
-      rewardOracle.endPlan();
-      // Mid-plan recomputes are skipped; the landing screen gets a fresh one
-      this.recomputeRewardOracle();
+      rewardOracle.endPlan(true);
       return;
     }
 
@@ -488,7 +488,13 @@ export class SelectModifierPhase extends BattlePhase {
    * would be discarded — the landing screen recomputes on arrival).
    */
   private recomputeRewardOracle(): void {
-    if (this.isCopy || this.customModifierSettings || !this.isPlayer() || rewardOracle.plan) {
+    if (
+      this.isCopy
+      || this.customModifierSettings
+      || !this.isPlayer()
+      || rewardOracle.plan
+      || rewardOracle.suppressed
+    ) {
       return;
     }
     rewardOracle.recompute(this.typeOptions, this.rerollCount, this.getModifierCount());

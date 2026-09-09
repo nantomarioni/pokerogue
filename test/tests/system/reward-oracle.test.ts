@@ -236,6 +236,17 @@ describe("Reward oracle", () => {
     expect(currentOptionKeys(finalPhase)).toContain(targetKey);
     expect(game.scene.money).toBe(moneyBefore - path.totalCost);
     expect(game.scene.gameSpeed).toBe(speedBefore); // override reverted
+
+    // Arrival suppresses the oracle: overlay data cleared, recomputes are no-ops
+    expect(rewardOracle.suppressed).toBe(true);
+    expect(rewardOracle.result).toBeNull();
+    finalPhase["recomputeRewardOracle"]();
+    expect(rewardOracle.result).toBeNull();
+
+    // A savestate load is the reset switch: unsuppress + recompute work again
+    rewardOracle.unsuppress();
+    finalPhase["recomputeRewardOracle"]();
+    expect(rewardOracle.result).not.toBeNull();
   }, 30000);
 
   it("should auto-execute a specifically chosen target, not just the cheapest", async () => {
