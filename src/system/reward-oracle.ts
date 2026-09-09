@@ -104,23 +104,32 @@ export class RewardOracle {
   private revertAutomationSpeed: (() => void) | null = null;
 
   /**
-   * Begin auto-executing the cheapest reroll path among the current wanted hits.
+   * The wanted items currently reachable via rerolls, cheapest first
+   * (the auto-path candidates offered to the player).
+   */
+  public getPlanCandidates(): WantedItemPath[] {
+    if (!this.result) {
+      return [];
+    }
+    return [...this.result.paths.values()]
+      .filter((p): p is WantedItemPath => p != null && p.kind === "reroll")
+      .sort((a, b) => a.totalCost - b.totalCost);
+  }
+
+  /**
+   * Begin auto-executing the recorded path for one specific wanted item.
    * The actual steps are driven reactively by {@linkcode SelectModifierPhase.continueAutoPath}
    * each time the shop becomes input-ready.
    * @returns Whether a plan was started
    */
-  public startCheapestPlan(): boolean {
+  public startPlanFor(targetKey: string): boolean {
     if (this.plan || !this.result) {
       return false;
     }
-    const rerollHits = [...this.result.paths.values()].filter(
-      (p): p is WantedItemPath => p != null && p.kind === "reroll",
-    );
-    if (rerollHits.length === 0) {
+    const target = this.getPlanCandidates().find(p => p.key === targetKey);
+    if (!target) {
       return false;
     }
-    rerollHits.sort((a, b) => a.totalCost - b.totalCost);
-    const target = rerollHits[0];
     this.plan = {
       targetKey: target.key,
       label: target.label,
@@ -131,6 +140,15 @@ export class RewardOracle {
     this.applyAutomationSpeed();
     this.onResults?.(this);
     return true;
+  }
+
+  /**
+   * Begin auto-executing the cheapest reroll path among the current wanted hits.
+   * @returns Whether a plan was started
+   */
+  public startCheapestPlan(): boolean {
+    const cheapest = this.getPlanCandidates()[0];
+    return cheapest != null && this.startPlanFor(cheapest.key);
   }
 
   /** Mark the current plan step executed. */

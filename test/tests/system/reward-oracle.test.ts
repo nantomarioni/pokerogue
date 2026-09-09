@@ -238,6 +238,46 @@ describe("Reward oracle", () => {
     expect(game.scene.gameSpeed).toBe(speedBefore); // override reverted
   }, 30000);
 
+  it("should auto-execute a specifically chosen target, not just the cheapest", async () => {
+    const phase = await reachRewardScreen();
+    game.scene.money = 5000;
+
+    // Two reachable targets from different branches of the tree; avoid keys that are
+    // also on the current screen or in the fixed shop row (those hits aren't rerolls)
+    const excluded = new Set([...currentOptionKeys(phase), "POTION", "ETHER", "REVIVE"]);
+    wantedItems.toggle("__SENTINEL_NEVER_FOUND__");
+    phase["recomputeRewardOracle"]();
+    const trace = rewardOracle.result!.trace;
+    const shallow = trace.find(t => t.lockPath.length === 1 && t.optionKeys.some(k => !excluded.has(k)))!;
+    const shallowKey = shallow.optionKeys.find(k => !excluded.has(k))!;
+    const deep = trace.find(
+      t => t.lockPath.length === 2 && t.optionKeys.some(k => !excluded.has(k) && !shallow.optionKeys.includes(k)),
+    )!;
+    expect(deep).toBeDefined();
+    const deepKey = deep.optionKeys.find(k => !excluded.has(k) && !shallow.optionKeys.includes(k))!;
+    wantedItems.toggle("__SENTINEL_NEVER_FOUND__");
+    wantedItems.toggle(shallowKey);
+    wantedItems.toggle(deepKey);
+    phase["recomputeRewardOracle"]();
+
+    const candidates = rewardOracle.getPlanCandidates();
+    expect(candidates.length).toBe(2);
+    // Deliberately pick the pricier candidate
+    const pricier = candidates.at(-1)!;
+    expect(rewardOracle.startPlanFor(pricier.key)).toBe(true);
+    expect(rewardOracle.plan?.targetKey).toBe(pricier.key);
+    (game.scene.phaseManager.getCurrentPhase() as SelectModifierPhase).continueAutoPath();
+
+    for (let guard = 0; rewardOracle.plan && guard < 6; guard++) {
+      await game.phaseInterceptor.to("SelectModifierPhase");
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    await vi.waitFor(() => expect(rewardOracle.plan).toBeNull(), { timeout: 10000 });
+
+    const finalPhase = game.scene.phaseManager.getCurrentPhase() as SelectModifierPhase;
+    expect(currentOptionKeys(finalPhase)).toContain(pricier.key);
+  }, 30000);
+
   it("should adopt new default keybinds into stale saved mapping configs", async () => {
     await game.classicMode.startBattle(SpeciesId.FEEBAS);
     const controller = game.scene.inputController;

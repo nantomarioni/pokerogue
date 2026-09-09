@@ -4,9 +4,10 @@ import type { InputsController } from "#app/inputs-controller";
 import { isDev } from "#constants/app-constants";
 import { Button } from "#enums/buttons";
 import { UiMode } from "#enums/ui-mode";
-import { rewardOracle } from "#system/reward-oracle";
+import { describeLockPath, rewardOracle } from "#system/reward-oracle";
 import { savestateManager } from "#system/savestate-manager";
 import { Setting, SettingKeys, settingIndex } from "#system/settings";
+import type { OptionSelectItem } from "#types/ui-types";
 import { SettingsAudioUiHandler } from "#ui/audio-settings-ui-handler";
 import { AwaitableUiHandler } from "#ui/awaitable-ui-handler";
 import { SettingsDisplayUiHandler } from "#ui/display-settings-ui-handler";
@@ -18,6 +19,7 @@ import { PokedexUiHandler } from "#ui/pokedex-ui-handler";
 import { RunInfoUiHandler } from "#ui/run-info-ui-handler";
 import { SettingsUiHandler } from "#ui/settings-ui-handler";
 import { StarterSelectUiHandler } from "#ui/starter-select-ui-handler";
+import i18next from "i18next";
 import Phaser from "phaser";
 
 type ActionKeys = Record<Button, () => void>;
@@ -274,9 +276,10 @@ export class UiInputs {
   }
 
   /**
-   * Start auto-executing the reward oracle's cheapest wanted-item path.
-   * Only honored on an input-ready reward screen; each subsequent step fires
-   * reactively as soon as the shop accepts input again (no timers).
+   * Auto-execute a reward-oracle path. Behavior on an input-ready reward screen:
+   * - a plan is already running -> abort it
+   * - exactly one wanted item is reachable via rerolls -> execute it immediately
+   * - several -> open a picker listing each item with its path and total cost
    */
   buttonAutoPath(): void {
     if (globalScene.ui?.getMode() !== UiMode.MODIFIER_SELECT || savestateManager.restorePending) {
@@ -286,12 +289,48 @@ export class UiInputs {
     if (handler instanceof AwaitableUiHandler && !handler["awaitingActionInput"]) {
       return;
     }
+    // Pressing again while a plan runs aborts it
+    if (rewardOracle.plan) {
+      rewardOracle.endPlan();
+      return;
+    }
     const phase = globalScene.phaseManager.getCurrentPhase();
-    if (!phase.is("SelectModifierPhase") || !rewardOracle.startCheapestPlan()) {
+    const candidates = rewardOracle.getPlanCandidates();
+    if (!phase.is("SelectModifierPhase") || candidates.length === 0) {
       globalScene.ui.playError();
       return;
     }
-    phase.continueAutoPath();
+
+    const startPlan = (targetKey: string) => {
+      if (rewardOracle.startPlanFor(targetKey)) {
+        phase.continueAutoPath();
+      } else {
+        globalScene.ui.playError();
+      }
+    };
+
+    if (candidates.length === 1) {
+      startPlan(candidates[0].key);
+      return;
+    }
+
+    // Several reachable wanted items: let the player pick the target
+    const options: OptionSelectItem[] = candidates.map(candidate => ({
+      label: `${candidate.label} — ${describeLockPath(candidate.lockPath)} (${candidate.totalCost.toLocaleString()})`,
+      handler: () => {
+        globalScene.ui.revertMode();
+        startPlan(candidate.key);
+        return true;
+      },
+    }));
+    options.push({
+      label: i18next.t("menuUiHandler:back", { defaultValue: "Back" }),
+      handler: () => {
+        globalScene.ui.revertMode();
+        return true;
+      },
+    });
+    globalScene.ui.setOverlayMode(UiMode.MENU_OPTION_SELECT, { options, maxOptions: 7 });
   }
 
   /** Handle savestate navigation, only while the game is waiting for input at a safe boundary. */

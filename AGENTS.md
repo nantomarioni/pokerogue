@@ -22,8 +22,9 @@ A fork of [pagefaultgames/pokerogue](https://github.com/pagefaultgames/pokerogue
   mid-wave savestates (auto per turn + reward roll, rewind/forward keys).
 - `src/system/reward-oracle.ts` + `src/system/wanted-items.ts` — deterministic
   reward-roll simulation; cheapest reroll/lock path per wanted item, with
-  reactive auto-execution of the cheapest path (`P` key / RT on the reward
-  screen, runs at 20x speed).
+  reactive auto-execution (`P` key / RT on the reward screen, 20x speed;
+  single reachable target runs immediately, several open a picker, pressing
+  again aborts).
 - `src/ui/containers/savestate-overlay.ts`, `src/ui/containers/reward-oracle-overlay.ts`.
 - `deploy/` (production Dockerfile + nginx relay), `.github/workflows/homelab-cicd.yml`.
 
