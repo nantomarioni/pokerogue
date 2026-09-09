@@ -1,25 +1,36 @@
 import { globalScene } from "#app/global-scene";
 import { TextStyle } from "#enums/text-style";
-import { describeLockPath, type RewardOracle } from "#system/reward-oracle";
-import { addTextObject } from "#ui/text";
+import type { RewardOracle, WantedItemPath } from "#system/reward-oracle";
+import { addBBCodeTextObject, addTextObject, getTextColor } from "#ui/text";
 import { addWindow } from "#ui/ui-theme";
 import i18next from "i18next";
+import type BBCodeText from "phaser3-rex-plugins/plugins/gameobjects/tagtext/bbcodetext/BBCodeText";
 
-/** Widest the overlay grows before text wraps awkwardly; matches HUD proportions. */
 const MAX_LINES = 12;
+
+/** BBCode-wrap a fragment in the given text style (color + shadow). */
+function bb(text: string, style: TextStyle): string {
+  return `[shadow=${getTextColor(style, true)}][color=${getTextColor(style, false)}]${text}[/color][/shadow]`;
+}
 
 /**
  * HUD panel listing, for each wanted item, the cheapest way to obtain it from the
- * current reward screen (already here / buy from shop / a reroll+lock sequence).
+ * current reward screen. Two aligned columns — item names (right-aligned) and their
+ * paths (left-aligned at a shared x) — so path depths compare at a glance:
  *
- * Fed by {@linkcode RewardOracle.onResults}; visible only while results exist
- * (i.e. while a reward screen with a non-empty wanted list is open). Never takes
- * input focus — same pattern as the savestate overlay.
+ *     Leftovers  HERE
+ *   TM Ice Beam  R > L > R  (1,250)
+ *        Potion  shop (98)
+ *
+ * `R` = reroll (white), `L` = locked reroll (blue). Costs are path totals; anything
+ * that would exceed the current money never reaches this overlay (the oracle's
+ * search prunes by budget). Never takes input focus.
  */
 export class RewardOracleOverlay extends Phaser.GameObjects.Container {
   private bg: Phaser.GameObjects.NineSlice;
   private titleText: Phaser.GameObjects.Text;
-  private bodyText: Phaser.GameObjects.Text;
+  private namesText: Phaser.GameObjects.Text;
+  private pathsText: BBCodeText;
 
   constructor() {
     // Top-right corner, below the money/wave text
@@ -31,16 +42,43 @@ export class RewardOracleOverlay extends Phaser.GameObjects.Container {
     this.bg.setOrigin(1, 0);
     this.add(this.bg);
 
-    this.titleText = addTextObject(0, 3, "", TextStyle.MESSAGE, { fontSize: "48px" });
+    this.titleText = addTextObject(-4, 3, "", TextStyle.MESSAGE, { fontSize: "48px" });
     this.titleText.setOrigin(1, 0);
     this.add(this.titleText);
 
-    this.bodyText = addTextObject(0, 12, "", TextStyle.WINDOW_ALT, { fontSize: "44px" });
-    this.bodyText.setOrigin(1, 0);
-    this.bodyText.setLineSpacing(2);
-    this.add(this.bodyText);
+    this.namesText = addTextObject(0, 12, "", TextStyle.WINDOW_ALT, { fontSize: "44px" });
+    this.namesText.setOrigin(1, 0);
+    this.namesText.setAlign("right");
+    this.namesText.setLineSpacing(2);
+    this.add(this.namesText);
+
+    this.pathsText = addBBCodeTextObject(0, 12, "", TextStyle.WINDOW_ALT, {
+      fontSize: "44px",
+      lineSpacing: 2,
+    });
+    this.pathsText.setOrigin(0, 0);
+    this.add(this.pathsText);
 
     this.setVisible(false);
+  }
+
+  /** The colored path column for one wanted-item hit. */
+  private static formatPath(path: WantedItemPath): string {
+    switch (path.kind) {
+      case "current":
+        return bb(i18next.t("rewardOracle:here", { defaultValue: "HERE" }), TextStyle.SUMMARY_GREEN);
+      case "shop":
+        return bb(
+          i18next.t("rewardOracle:shop", { defaultValue: "shop ({{cost}})", cost: path.totalCost.toLocaleString() }),
+          TextStyle.WINDOW_ALT,
+        );
+      case "reroll": {
+        const steps = path.lockPath
+          .map(locked => (locked ? bb("L", TextStyle.SUMMARY_BLUE) : bb("R", TextStyle.WINDOW_ALT)))
+          .join(bb(" > ", TextStyle.WINDOW_ALT));
+        return `${steps}${bb(`  (${path.totalCost.toLocaleString()})`, TextStyle.WINDOW_ALT)}`;
+      }
+    }
   }
 
   /** Listener registered on {@linkcode RewardOracle.onResults}. */
@@ -51,65 +89,48 @@ export class RewardOracleOverlay extends Phaser.GameObjects.Container {
       return;
     }
 
-    const lines: string[] = [];
-    for (const [, path] of result.paths) {
-      if (lines.length >= MAX_LINES) {
-        lines.push("…");
-        break;
-      }
-      if (path == null) {
-        continue;
-      }
-      switch (path.kind) {
-        case "current":
-          lines.push(i18next.t("rewardOracle:here", { defaultValue: "{{item}}: HERE (free)", item: path.label }));
-          break;
-        case "shop":
-          lines.push(
-            i18next.t("rewardOracle:shop", {
-              defaultValue: "{{item}}: in shop ({{cost}})",
-              item: path.label,
-              cost: path.totalCost.toLocaleString(),
-            }),
-          );
-          break;
-        case "reroll":
-          lines.push(
-            i18next.t("rewardOracle:reroll", {
-              defaultValue: "{{item}}: {{path}} ({{cost}})",
-              item: path.label,
-              path: describeLockPath(path.lockPath),
-              cost: path.totalCost.toLocaleString(),
-            }),
-          );
-          break;
-      }
+    const names: string[] = [];
+    const paths: string[] = [];
+    // Cheapest first, so shallow paths cluster at the top
+    const hits = [...result.paths.values()]
+      .filter((p): p is WantedItemPath => p != null)
+      .sort((a, b) => a.totalCost - b.totalCost);
+    for (const path of hits.slice(0, MAX_LINES)) {
+      names.push(path.label);
+      paths.push(RewardOracleOverlay.formatPath(path));
     }
-    const misses = [...result.paths.values()].filter(p => p == null).length;
-    if (misses > 0) {
-      lines.push(
-        result.truncated
-          ? i18next.t("rewardOracle:missesTruncated", {
-              defaultValue: "{{count}} not found (search capped)",
-              count: misses,
-            })
-          : i18next.t("rewardOracle:misses", { defaultValue: "{{count}} not within budget", count: misses }),
-      );
+    if (hits.length > MAX_LINES) {
+      names.push("…");
+      paths.push("");
     }
 
-    if (lines.length === 0) {
+    const misses = [...result.paths.values()].filter(p => p == null).length;
+    if (misses > 0) {
+      names.push(
+        result.truncated
+          ? i18next.t("rewardOracle:missesTruncated", { defaultValue: "{{count}} not found (capped)", count: misses })
+          : i18next.t("rewardOracle:misses", { defaultValue: "{{count}} not within budget", count: misses }),
+      );
+      paths.push("");
+    }
+
+    if (names.length === 0) {
       this.setVisible(false);
       return;
     }
 
     this.titleText.setText(i18next.t("rewardOracle:title", { defaultValue: "Wanted items" }));
-    this.bodyText.setText(lines.join("\n"));
+    this.pathsText.setText(paths.join("\n"));
+    this.namesText.setText(names.join("\n"));
 
-    const width = Math.ceil(Math.max(this.titleText.displayWidth, this.bodyText.displayWidth)) + 8;
-    const height = Math.ceil(this.bodyText.displayHeight) + 16;
-    this.bg.setSize(Math.max(60, width), Math.max(24, height));
-    this.titleText.setPosition(-4, 3);
-    this.bodyText.setPosition(-4, 12);
+    // Layout: paths column left-aligned at a shared x; names right-aligned against it
+    const pathsWidth = Math.ceil(this.pathsText.displayWidth);
+    this.pathsText.setPosition(-4 - pathsWidth, 12);
+    this.namesText.setPosition(-4 - pathsWidth - 6, 12);
+
+    const totalWidth = Math.ceil(this.namesText.displayWidth) + 6 + pathsWidth + 12;
+    const totalHeight = Math.ceil(Math.max(this.namesText.displayHeight, this.pathsText.displayHeight)) + 16;
+    this.bg.setSize(Math.max(60, totalWidth), Math.max(24, totalHeight));
 
     this.setVisible(true);
   }

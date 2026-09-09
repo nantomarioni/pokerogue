@@ -53,13 +53,13 @@ export interface OracleResult {
   paths: Map<string, WantedItemPath | null>;
   /** True when the search hit the node cap before exhausting the money budget */
   truncated: boolean;
-  /** Every simulated roll: its lock path and the identity keys of its options (debug/tests) */
-  trace: { lockPath: boolean[]; optionKeys: string[] }[];
+  /** Every simulated roll: lock path, cumulative cost and option identity keys (debug/tests) */
+  trace: { lockPath: boolean[]; totalCost: number; optionKeys: string[] }[];
 }
 
-/** Human-readable path, e.g. "reroll > lock+reroll" */
+/** Compact human-readable path: `R` = reroll (rarities unlocked), `L` = locked reroll. */
 export function describeLockPath(lockPath: boolean[]): string {
-  return lockPath.map(locked => (locked ? "lock+reroll" : "reroll")).join(" > ");
+  return lockPath.map(locked => (locked ? "L" : "R")).join(" > ");
 }
 
 /**
@@ -226,7 +226,7 @@ export class RewardOracle {
           for (const option of options) {
             recordHit(option, { kind: "reroll", totalCost, lockPath });
           }
-          trace.push({ lockPath, optionKeys: options.map(o => getWantedItemKey(o.type)) });
+          trace.push({ lockPath, totalCost, optionKeys: options.map(o => getWantedItemKey(o.type)) });
 
           frontier.push({
             rerollCount: node.rerollCount + 1,

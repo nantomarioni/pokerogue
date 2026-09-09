@@ -64,11 +64,18 @@ describe("Reward oracle", () => {
     expect(predictedUnlocked).toBeDefined();
     expect(predictedThenLocked).toBeDefined();
 
+    // Costs must be PATH TOTALS, matching the game's own getRerollCost at each step
+    const firstStepCost = phase.getRerollCost(false);
+    expect(predictedUnlocked.totalCost).toBe(firstStepCost);
+
     // Actually reroll (unlocked): reality must match the prediction option-for-option
     expect(phase["rerollModifiers"]()).toBe(true);
     await game.phaseInterceptor.to("SelectModifierPhase");
     const rolled = game.scene.phaseManager.getCurrentPhase() as SelectModifierPhase;
     expect(currentOptionKeys(rolled)).toEqual(predictedUnlocked.optionKeys);
+
+    // Second step (locked): cumulative = first step + the locked cost the game now shows
+    expect(predictedThenLocked.totalCost).toBe(firstStepCost + rolled.getRerollCost(true));
 
     // Lock rarities and reroll again: still matching the original prediction
     rolled["toggleRerollLock"]();
