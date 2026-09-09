@@ -20,4 +20,5 @@ export enum Button {
   STATE_LOAD,
   STATE_PREV,
   STATE_NEXT,
+  AUTO_PATH,
 }

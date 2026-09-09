@@ -119,7 +119,11 @@ export class RewardOracleOverlay extends Phaser.GameObjects.Container {
       return;
     }
 
-    this.titleText.setText(i18next.t("rewardOracle:title", { defaultValue: "Wanted items" }));
+    this.titleText.setText(
+      oracle.plan
+        ? i18next.t("rewardOracle:executing", { defaultValue: "Auto: {{item}}…", item: oracle.plan.label })
+        : i18next.t("rewardOracle:title", { defaultValue: "Wanted items" }),
+    );
     this.pathsText.setText(paths.join("\n"));
     this.namesText.setText(names.join("\n"));
 

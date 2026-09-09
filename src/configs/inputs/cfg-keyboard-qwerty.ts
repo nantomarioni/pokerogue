@@ -222,6 +222,7 @@ export const CFG_KEYBOARD_QWERTY: KeyboardConfig = {
     [SettingKeyboard.BUTTON_STATE_LOAD]: Button.STATE_LOAD,
     [SettingKeyboard.BUTTON_STATE_PREV]: Button.STATE_PREV,
     [SettingKeyboard.BUTTON_STATE_NEXT]: Button.STATE_NEXT,
+    [SettingKeyboard.BUTTON_AUTO_PATH]: Button.AUTO_PATH,
     ...(isDev ? { [SettingKeyboard.BUTTON_DEV_CUSTOM]: Button.DEV_CUSTOM } : {}),
   },
   default: {
@@ -252,7 +253,7 @@ export const CFG_KEYBOARD_QWERTY: KeyboardConfig = {
     KEY_L: SettingKeyboard.BUTTON_STATE_LOAD,
     KEY_M: SettingKeyboard.ALT_BUTTON_MENU,
     KEY_O: -1,
-    KEY_P: -1,
+    KEY_P: SettingKeyboard.BUTTON_AUTO_PATH,
     KEY_Q: isDev ? SettingKeyboard.BUTTON_DEV_CUSTOM : -1,
     KEY_S: SettingKeyboard.ALT_BUTTON_DOWN,
     KEY_T: SettingKeyboard.ALT_BUTTON_CYCLE_FORM,

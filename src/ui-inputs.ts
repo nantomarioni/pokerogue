@@ -4,6 +4,7 @@ import type { InputsController } from "#app/inputs-controller";
 import { isDev } from "#constants/app-constants";
 import { Button } from "#enums/buttons";
 import { UiMode } from "#enums/ui-mode";
+import { rewardOracle } from "#system/reward-oracle";
 import { savestateManager } from "#system/savestate-manager";
 import { Setting, SettingKeys, settingIndex } from "#system/settings";
 import { SettingsAudioUiHandler } from "#ui/audio-settings-ui-handler";
@@ -108,6 +109,7 @@ export class UiInputs {
       [Button.STATE_LOAD]: () => this.buttonSavestate(Button.STATE_LOAD),
       [Button.STATE_PREV]: () => this.buttonSavestate(Button.STATE_PREV),
       [Button.STATE_NEXT]: () => this.buttonSavestate(Button.STATE_NEXT),
+      [Button.AUTO_PATH]: () => this.buttonAutoPath(),
       [Button.DEV_CUSTOM]: () => {
         if (isDev) {
           import("./dev-function").then(m => m.customDevFunction());
@@ -139,6 +141,7 @@ export class UiInputs {
       [Button.STATE_LOAD]: () => {},
       [Button.STATE_PREV]: () => {},
       [Button.STATE_NEXT]: () => {},
+      [Button.AUTO_PATH]: () => {},
       [Button.DEV_CUSTOM]: () => {},
     };
     return actions;
@@ -262,9 +265,33 @@ export class UiInputs {
       case Button.CYCLE_GENDER:
         this.buttonSavestate(Button.STATE_LOAD);
         return true;
+      case Button.CYCLE_ABILITY:
+        this.buttonAutoPath();
+        return true;
       default:
         return false;
     }
+  }
+
+  /**
+   * Start auto-executing the reward oracle's cheapest wanted-item path.
+   * Only honored on an input-ready reward screen; each subsequent step fires
+   * reactively as soon as the shop accepts input again (no timers).
+   */
+  buttonAutoPath(): void {
+    if (globalScene.ui?.getMode() !== UiMode.MODIFIER_SELECT || savestateManager.restorePending) {
+      return;
+    }
+    const handler = globalScene.ui.getHandler();
+    if (handler instanceof AwaitableUiHandler && !handler["awaitingActionInput"]) {
+      return;
+    }
+    const phase = globalScene.phaseManager.getCurrentPhase();
+    if (!phase.is("SelectModifierPhase") || !rewardOracle.startCheapestPlan()) {
+      globalScene.ui.playError();
+      return;
+    }
+    phase.continueAutoPath();
   }
 
   /** Handle savestate navigation, only while the game is waiting for input at a safe boundary. */

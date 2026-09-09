@@ -9,7 +9,7 @@ import { GameManager } from "#test/framework/game-manager";
 import { BaseOptionSelectUiHandler } from "#ui/base-option-select-ui-handler";
 import { MenuUiHandler } from "#ui/menu-ui-handler";
 import Phaser from "phaser";
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("Reward oracle", () => {
   let phaserGame: Phaser.Game;
@@ -195,6 +195,46 @@ describe("Reward oracle", () => {
       handler.processInput(Button.DOWN);
     }
     expect(ui.getMode()).toBe(UiMode.MENU_OPTION_SELECT);
+  }, 30000);
+
+  it("should auto-execute the cheapest path reactively and stop on arrival", async () => {
+    const phase = await reachRewardScreen();
+    game.scene.money = 5000;
+
+    // Pick a real reachable target from a full search's trace
+    wantedItems.toggle("__SENTINEL_NEVER_FOUND__");
+    phase["recomputeRewardOracle"]();
+    const deepNode = rewardOracle.result!.trace.find(t => t.lockPath.length === 2)!;
+    expect(deepNode).toBeDefined();
+    const targetKey = deepNode.optionKeys[0];
+    wantedItems.toggle("__SENTINEL_NEVER_FOUND__");
+    wantedItems.toggle(targetKey);
+    phase["recomputeRewardOracle"]();
+
+    const path = rewardOracle.result!.paths.get(targetKey)!;
+    expect(path).not.toBeNull();
+    expect(path.kind).toBe("reroll");
+    const moneyBefore = game.scene.money;
+    const speedBefore = game.scene.gameSpeed;
+
+    // Start the plan: speed compresses, steps fire reactively on input-readiness
+    expect(rewardOracle.startCheapestPlan()).toBe(true);
+    expect(game.scene.gameSpeed).toBe(20);
+    (game.scene.phaseManager.getCurrentPhase() as SelectModifierPhase).continueAutoPath();
+
+    // Pump phase transitions until the plan completes (the interceptor holds phases
+    // in tests; in the browser the chain free-runs). The short sleep lets the
+    // reactive microtasks (input-ready hook) settle between pumps.
+    for (let guard = 0; rewardOracle.plan && guard < 6; guard++) {
+      await game.phaseInterceptor.to("SelectModifierPhase");
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    await vi.waitFor(() => expect(rewardOracle.plan).toBeNull(), { timeout: 10000 });
+
+    const finalPhase = game.scene.phaseManager.getCurrentPhase() as SelectModifierPhase;
+    expect(currentOptionKeys(finalPhase)).toContain(targetKey);
+    expect(game.scene.money).toBe(moneyBefore - path.totalCost);
+    expect(game.scene.gameSpeed).toBe(speedBefore); // override reverted
   }, 30000);
 
   it("should build a deduplicated catalog with specific TMs and berries", () => {

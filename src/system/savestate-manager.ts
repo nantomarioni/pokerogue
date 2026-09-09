@@ -5,6 +5,7 @@ import type { ModifierTier } from "#enums/modifier-tier";
 import type { MoveId } from "#enums/move-id";
 import type { PokeballType } from "#enums/pokeball";
 import type { Pokemon } from "#field/pokemon";
+import { registerSpeedOverrideCanceller } from "#system/speed-overrides";
 import type { SessionSaveData } from "#types/save-data";
 import { decrypt, encrypt } from "#utils/data";
 import i18next from "i18next";
@@ -108,6 +109,7 @@ export function registerSavestateI18nFallbacks(): void {
       buttonStateLoad: "Load Last State",
       buttonStatePrev: "Previous State",
       buttonStateNext: "Next State",
+      buttonAutoPath: "Auto-Execute Reward Path",
     },
     true,
     false,
@@ -529,3 +531,5 @@ export class SavestateManager {
 }
 
 export const savestateManager = new SavestateManager();
+// An explicit player speed change always beats a pending restore speed boost
+registerSpeedOverrideCanceller(() => savestateManager.cancelSpeedBoost());

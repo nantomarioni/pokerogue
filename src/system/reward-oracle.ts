@@ -8,6 +8,7 @@ import {
   type ModifierTypeOption,
   regenerateModifierPoolThresholds,
 } from "#modifiers/modifier-type";
+import { registerSpeedOverrideCanceller } from "#system/speed-overrides";
 import { getWantedItemKey, wantedItems } from "#system/wanted-items";
 import { NumberHolder } from "#utils/common";
 
@@ -19,6 +20,27 @@ const BASE_REROLL_COST = 250;
 const MAX_EXTRA_ROLLS = 8;
 /** Safety cap on simulated nodes (a full depth-8 tree is 2^9 - 2 = 510 nodes). */
 const MAX_NODES = 600;
+/**
+ * Game speed while auto-executing a path. The speed system is a plain duration divisor
+ * (`Math.ceil(value / gameSpeed)`), and the whole test suite runs the game with
+ * effectively instant animations, so aggressive compression is safe. Reverted when
+ * the plan ends.
+ */
+const AUTOMATION_GAME_SPEED = 20;
+
+/** An in-flight auto-executed reroll path. */
+export interface PlannedPath {
+  /** Wanted-item key the plan is driving toward */
+  targetKey: string;
+  /** Localized item name (overlay display) */
+  label: string;
+  /** Lock choice per remaining reroll */
+  lockPath: boolean[];
+  /** Next step to execute */
+  stepIndex: number;
+  /** rerollCount the shop must be at before executing step `stepIndex` (divergence guard) */
+  startRerollCount: number;
+}
 
 /** A reachable future roll: RNG state at its entry + how we got there. */
 interface OracleNode {
@@ -75,6 +97,77 @@ export class RewardOracle {
   public result: OracleResult | null = null;
   /** Listener notified when a recompute finishes (used by the HUD overlay). */
   public onResults: ((oracle: RewardOracle) => void) | null = null;
+
+  /** The path currently being auto-executed, if any. */
+  public plan: PlannedPath | null = null;
+  /** Reverts the automation speed override (null when none is active). */
+  private revertAutomationSpeed: (() => void) | null = null;
+
+  /**
+   * Begin auto-executing the cheapest reroll path among the current wanted hits.
+   * The actual steps are driven reactively by {@linkcode SelectModifierPhase.continueAutoPath}
+   * each time the shop becomes input-ready.
+   * @returns Whether a plan was started
+   */
+  public startCheapestPlan(): boolean {
+    if (this.plan || !this.result) {
+      return false;
+    }
+    const rerollHits = [...this.result.paths.values()].filter(
+      (p): p is WantedItemPath => p != null && p.kind === "reroll",
+    );
+    if (rerollHits.length === 0) {
+      return false;
+    }
+    rerollHits.sort((a, b) => a.totalCost - b.totalCost);
+    const target = rerollHits[0];
+    this.plan = {
+      targetKey: target.key,
+      label: target.label,
+      lockPath: [...target.lockPath],
+      stepIndex: 0,
+      startRerollCount: this.result.rerollCount,
+    };
+    this.applyAutomationSpeed();
+    this.onResults?.(this);
+    return true;
+  }
+
+  /** Mark the current plan step executed. */
+  public advancePlanStep(): void {
+    if (this.plan) {
+      this.plan.stepIndex++;
+    }
+  }
+
+  /** Finish or abort the running plan, reverting the speed override. */
+  public endPlan(): void {
+    if (!this.plan) {
+      return;
+    }
+    this.plan = null;
+    this.revertAutomationSpeed?.();
+    this.onResults?.(this);
+  }
+
+  /** Drop the automation speed override without reverting (an explicit player speed change wins). */
+  public dropSpeedOverride(): void {
+    this.revertAutomationSpeed = null;
+  }
+
+  private applyAutomationSpeed(): void {
+    if (this.revertAutomationSpeed || globalScene.gameSpeed >= AUTOMATION_GAME_SPEED) {
+      return;
+    }
+    const originalSpeed = globalScene.gameSpeed;
+    globalScene.gameSpeed = AUTOMATION_GAME_SPEED;
+    this.revertAutomationSpeed = () => {
+      if (globalScene.gameSpeed === AUTOMATION_GAME_SPEED) {
+        globalScene.gameSpeed = originalSpeed;
+      }
+      this.revertAutomationSpeed = null;
+    };
+  }
 
   /** Reroll cost for one step (mirrors SelectModifierPhase.getRerollCost, sans custom multipliers). */
   private getStepCost(locked: boolean, parentTiers: ModifierTier[], rerollCount: number): number {
@@ -159,6 +252,7 @@ export class RewardOracle {
 
   /** Drop stale results (called when a new encounter starts and the shop is gone). */
   public clear(): void {
+    this.endPlan();
     if (this.result == null) {
       return;
     }
@@ -253,3 +347,5 @@ export class RewardOracle {
 }
 
 export const rewardOracle = new RewardOracle();
+// An explicit player speed change always beats the automation speed override
+registerSpeedOverrideCanceller(() => rewardOracle.dropSpeedOverride());

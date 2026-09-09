@@ -37,6 +37,11 @@ export class ModifierSelectUiHandler extends AwaitableUiHandler {
   private moveInfoOverlay: MoveInfoOverlay;
   private moveInfoOverlayActive = false;
   protected declare onActionInput: ModifierSelectCallback | null;
+  /**
+   * Fork hook: invoked whenever the shop becomes ready for player input
+   * (used by the reward-oracle path automation for reactive stepping).
+   */
+  public onInputReady: (() => void) | null = null;
 
   private rowCursor = 0;
   private player: boolean;
@@ -166,6 +171,8 @@ export class ModifierSelectUiHandler extends AwaitableUiHandler {
       if (args.length >= 3) {
         this.awaitingActionInput = true;
         this.onActionInput = args[2];
+        // Fork hook: reward-oracle path automation reacts the moment input is legal
+        this.onInputReady?.();
       }
       this.moveInfoOverlay.active = this.moveInfoOverlayActive;
       return false;
@@ -396,6 +403,8 @@ export class ModifierSelectUiHandler extends AwaitableUiHandler {
             }
             this.awaitingActionInput = true;
             this.onActionInput = args[2];
+            // Fork hook: reward-oracle path automation reacts the moment input is legal
+            this.onInputReady?.();
           });
         });
       });

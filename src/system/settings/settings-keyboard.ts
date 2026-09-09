@@ -44,6 +44,7 @@ export enum SettingKeyboard {
   BUTTON_STATE_LOAD = "BUTTON_STATE_LOAD",
   BUTTON_STATE_PREV = "BUTTON_STATE_PREV",
   BUTTON_STATE_NEXT = "BUTTON_STATE_NEXT",
+  BUTTON_AUTO_PATH = "BUTTON_AUTO_PATH",
   BUTTON_DEV_CUSTOM = "BUTTON_DEV_CUSTOM",
 }
 
@@ -88,6 +89,7 @@ export const settingKeyboardOptions = {
   [SettingKeyboard.BUTTON_STATE_LOAD]: [`KEY ${Button.STATE_LOAD.toString()}`, pressAction],
   [SettingKeyboard.BUTTON_STATE_PREV]: [`KEY ${Button.STATE_PREV.toString()}`, pressAction],
   [SettingKeyboard.BUTTON_STATE_NEXT]: [`KEY ${Button.STATE_NEXT.toString()}`, pressAction],
+  [SettingKeyboard.BUTTON_AUTO_PATH]: [`KEY ${Button.AUTO_PATH.toString()}`, pressAction],
   ...(isDev ? { [SettingKeyboard.BUTTON_DEV_CUSTOM]: [`KEY ${Button.DEV_CUSTOM.toString()}`, pressAction] } : {}),
 };
 
@@ -131,6 +133,7 @@ export const settingKeyboardDefaults = {
   [SettingKeyboard.BUTTON_STATE_LOAD]: 0,
   [SettingKeyboard.BUTTON_STATE_PREV]: 0,
   [SettingKeyboard.BUTTON_STATE_NEXT]: 0,
+  [SettingKeyboard.BUTTON_AUTO_PATH]: 0,
   ...(isDev ? { [SettingKeyboard.BUTTON_DEV_CUSTOM]: 0 } : {}),
 };
 
@@ -183,6 +186,7 @@ export function setSettingKeyboard(setting: SettingKeyboard, value: number): boo
     case SettingKeyboard.BUTTON_STATE_LOAD:
     case SettingKeyboard.BUTTON_STATE_PREV:
     case SettingKeyboard.BUTTON_STATE_NEXT:
+    case SettingKeyboard.BUTTON_AUTO_PATH:
     case SettingKeyboard.BUTTON_DEV_CUSTOM:
       if (value && globalScene.ui) {
         const cancelHandler = (success = false): boolean => {

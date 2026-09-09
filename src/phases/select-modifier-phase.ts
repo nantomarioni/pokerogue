@@ -28,8 +28,7 @@ import {
 import { BattlePhase } from "#phases/battle-phase";
 import { rewardOracle } from "#system/reward-oracle";
 import { savestateManager } from "#system/savestate-manager";
-import type { ModifierSelectUiHandler } from "#ui/modifier-select-ui-handler";
-import { SHOP_OPTIONS_ROW_LIMIT } from "#ui/modifier-select-ui-handler";
+import { ModifierSelectUiHandler, SHOP_OPTIONS_ROW_LIMIT } from "#ui/modifier-select-ui-handler";
 import { PartyOption, PartyUiHandler } from "#ui/party-ui-handler";
 import { NumberHolder } from "#utils/common";
 import i18next from "i18next";
@@ -423,6 +422,58 @@ export class SelectModifierPhase extends BattlePhase {
       this.getRerollCost(globalScene.lockModifierTiers),
     );
     this.recomputeRewardOracle();
+
+    // Arm the reactive automation driver: fires the moment the shop accepts input.
+    // Fetched from the handler list (not the current mode) — the MODIFIER_SELECT
+    // mode switch can still be pending here, and arming must not race it
+    const handler = globalScene.ui.handlers.find(h => h instanceof ModifierSelectUiHandler) as
+      | ModifierSelectUiHandler
+      | undefined;
+    if (handler) {
+      handler.onInputReady = () => this.continueAutoPath();
+      if (handler["awaitingActionInput"] && globalScene.ui.getMode() === UiMode.MODIFIER_SELECT) {
+        this.continueAutoPath();
+      }
+    }
+  }
+
+  /**
+   * Execute the next step of the reward oracle's planned path, if one is running.
+   * Called reactively whenever the shop becomes input-ready — no timers involved.
+   */
+  public continueAutoPath(): void {
+    const plan = rewardOracle.plan;
+    if (!plan) {
+      return;
+    }
+    // A stale closure from a finished roll must never drive the plan
+    if (globalScene.phaseManager.getCurrentPhase() !== this) {
+      return;
+    }
+    // Divergence guard: anything unexpected (copies, custom screens, savestate loads,
+    // manual actions) desyncs the reroll count and aborts the plan
+    if (this.isCopy || this.customModifierSettings || this.rerollCount !== plan.startRerollCount + plan.stepIndex) {
+      rewardOracle.endPlan();
+      return;
+    }
+    // Arrived: the wanted item is among the options on this screen
+    if (plan.stepIndex >= plan.lockPath.length) {
+      rewardOracle.endPlan();
+      return;
+    }
+
+    const wantLock = plan.lockPath[plan.stepIndex];
+    if (globalScene.lockModifierTiers !== wantLock) {
+      this.toggleRerollLock();
+      if (globalScene.lockModifierTiers !== wantLock) {
+        rewardOracle.endPlan();
+        return;
+      }
+    }
+    rewardOracle.advancePlanStep();
+    if (!this.rerollModifiers()) {
+      rewardOracle.endPlan();
+    }
   }
 
   /**
