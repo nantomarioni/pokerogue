@@ -454,11 +454,14 @@ export class SelectModifierPhase extends BattlePhase {
     // manual actions) desyncs the reroll count and aborts the plan
     if (this.isCopy || this.customModifierSettings || this.rerollCount !== plan.startRerollCount + plan.stepIndex) {
       rewardOracle.endPlan();
+      this.recomputeRewardOracle();
       return;
     }
     // Arrived: the wanted item is among the options on this screen
     if (plan.stepIndex >= plan.lockPath.length) {
       rewardOracle.endPlan();
+      // Mid-plan recomputes are skipped; the landing screen gets a fresh one
+      this.recomputeRewardOracle();
       return;
     }
 
@@ -467,21 +470,25 @@ export class SelectModifierPhase extends BattlePhase {
       this.toggleRerollLock();
       if (globalScene.lockModifierTiers !== wantLock) {
         rewardOracle.endPlan();
+        this.recomputeRewardOracle();
         return;
       }
     }
     rewardOracle.advancePlanStep();
     if (!this.rerollModifiers()) {
       rewardOracle.endPlan();
+      this.recomputeRewardOracle();
     }
   }
 
   /**
    * Refresh the reward oracle's predictions from the current screen state.
-   * No-op for copies and custom reward screens (their options aren't pool rolls).
+   * No-op for copies and custom reward screens (their options aren't pool rolls),
+   * and while a plan is auto-executing (the plan is fixed; intermediate results
+   * would be discarded — the landing screen recomputes on arrival).
    */
   private recomputeRewardOracle(): void {
-    if (this.isCopy || this.customModifierSettings || !this.isPlayer()) {
+    if (this.isCopy || this.customModifierSettings || !this.isPlayer() || rewardOracle.plan) {
       return;
     }
     rewardOracle.recompute(this.typeOptions, this.rerollCount, this.getModifierCount());
