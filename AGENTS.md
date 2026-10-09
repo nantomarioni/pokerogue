@@ -1,7 +1,8 @@
 # Agent guide — pokerogue (fork)
 
-Primary agent guide for this repo; see the workspace root `AGENTS.md` for the
-authoring standard. There are no nested `AGENTS.md` files.
+Primary agent guide for this repo. There are no nested `AGENTS.md` files;
+upstream's own contributor docs are in `docs/` (phases, linting, localization,
+comments, enemy-ai, podman).
 
 ## What this is
 
@@ -103,11 +104,12 @@ Canonical fork task: extend a fork feature (e.g. a new savestate action).
 
 ## Ripple awareness
 
-- **`infra/homelab-manifests/apps/pokerogue/`** deploys this repo: CI
-  (`.github/workflows/homelab-cicd.yml`) builds `ghcr.io/nantomarioni/pokerogue`
-  from `deploy/Dockerfile` and bumps `values.yaml`'s `image.tag` there (GitOps
-  contract; needs the `INFRA_REPO_TOKEN` repo secret). Container port/paths
-  changes ripple to that chart.
+- **`homelab-manifests`** — github.com/nantomarioni/homelab-manifests — expected
+  at `../homelab-manifests`. Helm chart `apps/pokerogue/` deploys this repo:
+  `.github/workflows/homelab-cicd.yml` builds `ghcr.io/nantomarioni/pokerogue`
+  from `deploy/Dockerfile` and bumps `image.tag` in `apps/pokerogue/values.yaml`
+  (needs the `INFRA_REPO_TOKEN` repo secret). Container port/path changes
+  ripple to that chart.
 - **Official API** (`api.pokerogue.net`): reached via the nginx `/rogueapi`
   relay which spoofs the `pokerogue.net` origin (`deploy/nginx.conf`; dev
   equivalent in `vite.config.ts`). Session save schema must stay compatible
@@ -118,6 +120,6 @@ Canonical fork task: extend a fork feature (e.g. a new savestate action).
 - Savestate semantics/invariants → doc comments in `src/system/savestate-manager.ts`.
 - Oracle fidelity questions → `src/system/reward-oracle.ts` + the
   prediction-vs-reality test in `test/tests/system/reward-oracle.test.ts`.
-- Deploy/serving → `deploy/nginx.conf`, the workflow, and the manifests chart.
+- Deploy/serving → `deploy/nginx.conf`, `homelab-cicd.yml`, `../homelab-manifests/apps/pokerogue/`.
 - Upstream drift after rebase → run the fork suites first; they encode the
   load-bearing assumptions.
